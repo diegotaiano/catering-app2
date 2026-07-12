@@ -1,11 +1,10 @@
 :root {
-  --nero: #1A1A1A;
-  --nero-testo: #262220;
-  --avorio: #F8F6F0;
-  --avorio-scuro: #EFEBDF;
-  --oro: #9C8A2B;
-  --oro-chiaro: #C4AF4A;
-  --oro-scuro: #746519;
+  --nero: #232021;
+  --avorio: #FDFCFA;
+  --avorio-scuro: #EFEBE0;
+  --oro: #B5A349;
+  --oro-chiaro: #D3C480;
+  --oro-scuro: #8C7E38;
   --grigio-testo: #6B665C;
 }
 
@@ -15,26 +14,27 @@ body {
   margin: 0;
   font-family: 'EB Garamond', Georgia, serif;
   background: var(--avorio);
-  color: var(--nero-testo);
+  color: var(--nero);
   font-size: 16px;
 }
 
 h1, h2, h3 {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   color: var(--nero);
+  text-transform: none;
 }
 
 .container { max-width: 900px; margin: 0 auto; padding: 24px; }
 
 .card {
   background: #fff;
-  border-radius: 4px;
+  border-radius: 3px;
   padding: 22px 24px;
   margin-bottom: 16px;
   border: 1px solid var(--avorio-scuro);
-  box-shadow: 0 1px 3px rgba(26,26,26,0.06);
+  box-shadow: 0 1px 3px rgba(35,32,33,0.06);
 }
 
 button {
@@ -44,10 +44,11 @@ button {
   padding: 9px 20px;
   border-radius: 2px;
   cursor: pointer;
-  font-family: 'EB Garamond', Georgia, serif;
-  font-weight: 500;
-  font-size: 14px;
-  letter-spacing: 0.03em;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 button:hover { background: var(--oro-scuro); border-color: var(--oro-scuro); }
 button.secondary { background: transparent; color: var(--nero); border: 1px solid var(--nero); }
@@ -65,7 +66,7 @@ input, select, textarea {
   font-family: 'EB Garamond', Georgia, serif;
   margin-bottom: 10px;
   background: #fff;
-  color: var(--nero-testo);
+  color: var(--nero);
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
@@ -77,12 +78,13 @@ input:focus, select:focus, textarea:focus {
   padding: 3px 12px;
   border-radius: 2px;
   font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   border: 1px solid transparent;
 }
 .badge.da_contattare { background: var(--avorio-scuro); color: var(--grigio-testo); border-color: #ddd6c4; }
-.badge.in_attesa { background: #FBF3DD; color: var(--oro-scuro); border-color: var(--oro-chiaro); }
+.badge.in_attesa { background: #FBF6E4; color: var(--oro-scuro); border-color: var(--oro-chiaro); }
 .badge.disponibile { background: #EAF1E8; color: #2f5c33; border-color: #b8d4b8; }
 .badge.non_disponibile { background: #F5E7E5; color: #8a2f2f; border-color: #dcb8b4; }
 
@@ -91,7 +93,7 @@ input:focus, select:focus, textarea:focus {
 .top-bar {
   background: var(--nero);
   color: var(--avorio);
-  padding: 16px 28px;
+  padding: 14px 28px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -100,10 +102,11 @@ input:focus, select:focus, textarea:focus {
 .top-bar a {
   color: var(--oro-chiaro);
   text-decoration: none;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 600;
-  font-size: 19px;
-  letter-spacing: 0.03em;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 .top-bar a:hover { color: var(--oro); }
 .top-bar button {
@@ -118,7 +121,7 @@ input:focus, select:focus, textarea:focus {
   .card { padding: 16px; }
   .row { flex-wrap: wrap; }
   .top-bar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
-  .top-bar a { font-size: 17px; }
-  h1 { font-size: 22px; }
-  h3 { font-size: 17px; }
+  .top-bar a { font-size: 14px; }
+  h1 { font-size: 21px; }
+  h3 { font-size: 16px; }
 }
