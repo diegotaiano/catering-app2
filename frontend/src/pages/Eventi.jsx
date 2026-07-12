@@ -14,6 +14,7 @@ export default function Eventi() {
   const [mostraForm, setMostraForm] = useState(false);
   const [nuovoEvento, setNuovoEvento] = useState(VUOTO);
   const [errore, setErrore] = useState(null);
+  const [annoAperto, setAnnoAperto] = useState(null);
 
   async function carica() {
     const [ev, ref] = await Promise.all([api.getEventi(), api.getReferenti()]);
@@ -127,24 +128,66 @@ export default function Eventi() {
         </div>
       )}
 
-      {eventi.map(ev => (
-        <Link key={ev.id} to={`/eventi/${ev.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <div className="card">
-            <div className="row">
-              <div>
-                <h3 style={{ margin: 0 }}>{ev.nome}</h3>
-                <p style={{ margin: '4px 0', color: '#8B5E3C' }}>
-                  {new Date(ev.data_evento).toLocaleDateString('it-IT')} · {ev.luogo || 'luogo da definire'}
-                  {ev.referente_nome ? ` · Referente: ${ev.referente_nome} ${ev.referente_cognome}` : ' · Nessun referente assegnato'}
-                </p>
+      {(() => {
+        const oggi = new Date(); oggi.setHours(0, 0, 0, 0);
+        const futuri = eventi.filter(ev => new Date(ev.data_evento) >= oggi)
+          .sort((a, b) => new Date(a.data_evento) - new Date(b.data_evento));
+        const passati = eventi.filter(ev => new Date(ev.data_evento) < oggi)
+          .sort((a, b) => new Date(b.data_evento) - new Date(a.data_evento));
+
+        const passatiPerAnno = {};
+        passati.forEach(ev => {
+          const anno = new Date(ev.data_evento).getFullYear();
+          if (!passatiPerAnno[anno]) passatiPerAnno[anno] = [];
+          passatiPerAnno[anno].push(ev);
+        });
+        const anni = Object.keys(passatiPerAnno).sort((a, b) => b - a);
+
+        return (
+          <>
+            {futuri.map(ev => <CardEvento key={ev.id} ev={ev} />)}
+            {futuri.length === 0 && passati.length === 0 && <p>Nessun evento ancora creato.</p>}
+
+            {anni.length > 0 && (
+              <div style={{ marginTop: 28 }}>
+                <h3 style={{ color: '#8B5E3C', borderBottom: '1px solid #e0d6bd', paddingBottom: 8 }}>Eventi passati</h3>
+                {anni.map(anno => (
+                  <div key={anno} style={{ marginBottom: 8 }}>
+                    <div className="row" style={{ cursor: 'pointer', padding: '8px 4px' }}
+                      onClick={() => setAnnoAperto(annoAperto === anno ? null : anno)}>
+                      <strong>{anno}</strong>
+                      <span style={{ color: '#8B5E3C', fontSize: 13 }}>
+                        {passatiPerAnno[anno].length} event{passatiPerAnno[anno].length === 1 ? 'o' : 'i'} {annoAperto === anno ? '▲' : '▼'}
+                      </span>
+                    </div>
+                    {annoAperto === anno && passatiPerAnno[anno].map(ev => <CardEvento key={ev.id} ev={ev} />)}
+                  </div>
+                ))}
               </div>
-              <span className="badge da_contattare">{ev.stato}</span>
-            </div>
-          </div>
-        </Link>
-      ))}
-      {eventi.length === 0 && <p>Nessun evento ancora creato.</p>}
+            )}
+          </>
+        );
+      })()}
     </div>
+  );
+}
+
+function CardEvento({ ev }) {
+  return (
+    <Link to={`/eventi/${ev.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <div className="card">
+        <div className="row">
+          <div>
+            <h3 style={{ margin: 0 }}>{ev.nome}</h3>
+            <p style={{ margin: '4px 0', color: '#8B5E3C' }}>
+              {new Date(ev.data_evento).toLocaleDateString('it-IT')} · {ev.luogo || 'luogo da definire'}
+              {ev.referente_nome ? ` · Referente: ${ev.referente_nome} ${ev.referente_cognome}` : ' · Nessun referente assegnato'}
+            </p>
+          </div>
+          <span className="badge da_contattare">{ev.stato}</span>
+        </div>
+      </div>
+    </Link>
   );
 }
 
