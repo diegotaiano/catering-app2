@@ -19,7 +19,6 @@ export default function EventoDetail() {
   const [lavoratori, setLavoratori] = useState([]);
   const [referenti, setReferenti] = useState([]);
   const [capiServizio, setCapiServizio] = useState([]);
-  const [nuovaSquadra, setNuovaSquadra] = useState('Personale evento');
   const [messaggio, setMessaggio] = useState(null);
   const [modificaAperta, setModificaAperta] = useState(false);
   const [formEvento, setFormEvento] = useState(null);
@@ -66,14 +65,6 @@ export default function EventoDetail() {
       ora_fine: formEvento.ora_fine || null
     });
     setModificaAperta(false);
-    carica();
-  }
-
-  async function handleCreaSquadra(e) {
-    e.preventDefault();
-    if (!nuovaSquadra) return;
-    await api.creaSquadra(id, nuovaSquadra);
-    setNuovaSquadra('');
     carica();
   }
 
@@ -253,20 +244,6 @@ export default function EventoDetail() {
           <p>Nessun furgone in anagrafica. Aggiungili in <a href="/anagrafica">Anagrafica</a>.</p>
         )}
       </div>
-
-      {puoModificare && evento.squadre.length === 0 && (
-        <div className="card">
-          <h3>Crea lista personale per questo evento</h3>
-          <p style={{ fontSize: 13, color: '#8B5E3C' }}>
-            Questo evento è stato creato prima dell'introduzione della lista automatica: creala qui una volta sola.
-          </p>
-          <form onSubmit={handleCreaSquadra} className="row">
-            <input placeholder="es. Personale evento" value={nuovaSquadra}
-              onChange={e => setNuovaSquadra(e.target.value)} style={{ marginBottom: 0 }} />
-            <button type="submit">Crea</button>
-          </form>
-        </div>
-      )}
 
       {evento.squadre.map(sq => (
         <SquadraCard

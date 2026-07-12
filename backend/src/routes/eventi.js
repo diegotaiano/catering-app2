@@ -46,6 +46,16 @@ router.get('/:id', async (req, res) => {
 
   if (!autorizzato) return res.status(403).json({ errore: 'Non hai accesso a questo evento' });
 
+  // Migrazione automatica: eventi creati prima dell'introduzione della lista automatica
+  // ne restano privi. Ne creiamo una al volo, così l'utente non deve mai gestirlo a mano.
+  const conteggioSquadre = await query('SELECT COUNT(*) FROM squadre WHERE evento_id = $1', [id]);
+  if (Number(conteggioSquadre.rows[0].count) === 0) {
+    await query(
+      `INSERT INTO squadre (evento_id, nome, creata_da) VALUES ($1, 'Personale evento', $2)`,
+      [id, req.utente.id]
+    );
+  }
+
   const squadre = await query(
     `SELECT sq.*,
        COALESCE(json_agg(
