@@ -23,6 +23,10 @@ catering-app/
 
 I nuovi utenti si creano direttamente dall'app, in Anagrafica → "Utenti app" (visibile solo a chi ha già accesso completo).
 
+## Cestino
+
+Eliminare un evento non lo cancella subito: lo sposta in un cestino (visibile solo a chi ha accesso completo, link "Cestino" in alto), da cui può essere ripristinato in qualsiasi momento oppure eliminato in modo definitivo e irreversibile.
+
 ## Setup Database (Neon o altro Postgres)
 
 1. Crea un progetto su [neon.tech](https://neon.tech) (o riusa quello esistente, creando

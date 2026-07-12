@@ -3,7 +3,9 @@ import Login from './pages/Login.jsx';
 import Eventi from './pages/Eventi.jsx';
 import EventoDetail from './pages/EventoDetail.jsx';
 import Anagrafica from './pages/Anagrafica.jsx';
+import Cestino from './pages/Cestino.jsx';
 import RispostaDisponibilita from './pages/RispostaDisponibilita.jsx';
+import { haAccessoCompleto } from './ruoli.js';
 
 function RottaProtetta({ children }) {
   const token = localStorage.getItem('token');
@@ -33,6 +35,7 @@ function TopBar() {
       </Link>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <Link to="/anagrafica">Anagrafica</Link>
+        {haAccessoCompleto(utente) && <Link to="/cestino">Cestino</Link>}
         {utente && <span>{utente.nome} {utente.cognome}</span>}
         <button onClick={logout}>Esci</button>
       </div>
@@ -50,6 +53,7 @@ export default function App() {
         <Route path="/eventi" element={<RottaProtetta><Eventi /></RottaProtetta>} />
         <Route path="/eventi/:id" element={<RottaProtetta><EventoDetail /></RottaProtetta>} />
         <Route path="/anagrafica" element={<RottaProtetta><Anagrafica /></RottaProtetta>} />
+        <Route path="/cestino" element={<RottaProtetta><Cestino /></RottaProtetta>} />
         <Route path="*" element={<Navigate to="/eventi" replace />} />
       </Routes>
     </>

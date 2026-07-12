@@ -132,3 +132,8 @@ ALTER TABLE eventi ADD COLUMN IF NOT EXISTS capo_servizio_id INTEGER REFERENCES 
 -- in referenti_commerciali, cosi' il suo accesso si puo' filtrare sui soli eventi
 -- di cui e' il referente. Non utilizzato per gli altri ruoli.
 ALTER TABLE utenti ADD COLUMN IF NOT EXISTS referente_commerciale_id INTEGER REFERENCES referenti_commerciali(id);
+
+-- Cestino: gli eventi eliminati non vengono cancellati subito, solo marcati.
+-- NULL = evento attivo, valorizzato = eliminato (recuperabile) in quel momento.
+ALTER TABLE eventi ADD COLUMN IF NOT EXISTS eliminato_il TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_eventi_eliminato ON eventi(eliminato_il);

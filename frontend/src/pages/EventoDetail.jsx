@@ -114,7 +114,7 @@ export default function EventoDetail() {
   }
 
   async function handleEliminaEvento() {
-    if (!confirm(`Eliminare definitivamente "${evento.nome}"? Questa azione non si può annullare: verranno eliminate anche squadre e assegnazioni furgoni collegate.`)) return;
+    if (!confirm(`Spostare "${evento.nome}" nel cestino? Potrai recuperarlo in qualsiasi momento da lì.`)) return;
     try {
       await api.eliminaEvento(id);
       navigate('/eventi');
@@ -147,7 +147,7 @@ export default function EventoDetail() {
           </button>
         )}
         {puoModificare && (
-          <button className="danger" onClick={handleEliminaEvento}>Elimina evento</button>
+          <button className="danger" onClick={handleEliminaEvento}>Sposta nel cestino</button>
         )}
       </div>
 
