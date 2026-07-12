@@ -54,6 +54,9 @@ export default function Eventi() {
 
   return (
     <div className="container">
+      <p style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 600, fontSize: 14, letterSpacing: '0.03em', color: 'var(--oro-scuro)', margin: '0 0 4px', textTransform: 'uppercase' }}>
+        Benvenuto, {utente?.nome}
+      </p>
       <div className="row" style={{ marginBottom: 16 }}>
         <h1>Eventi</h1>
         {puoCreare && (
