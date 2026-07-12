@@ -1,74 +1,114 @@
 :root {
-  --mogano: #2C1810;
-  --mattone: #C4501A;
-  --ocra: #D4A84B;
-  --cuoio: #8B5E3C;
-  --pergamena: #F5EDD8;
+  --nero: #1A1A1A;
+  --nero-testo: #262220;
+  --avorio: #F8F6F0;
+  --avorio-scuro: #EFEBDF;
+  --oro: #9C8A2B;
+  --oro-chiaro: #C4AF4A;
+  --oro-scuro: #746519;
+  --grigio-testo: #6B665C;
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: var(--pergamena);
-  color: var(--mogano);
+  font-family: 'EB Garamond', Georgia, serif;
+  background: var(--avorio);
+  color: var(--nero-testo);
+  font-size: 16px;
 }
 
-h1, h2, h3 { font-family: 'Playfair Display', serif; }
+h1, h2, h3 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--nero);
+}
 
 .container { max-width: 900px; margin: 0 auto; padding: 24px; }
 
 .card {
   background: #fff;
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: 4px;
+  padding: 22px 24px;
   margin-bottom: 16px;
-  box-shadow: 0 1px 4px rgba(44,24,16,0.1);
+  border: 1px solid var(--avorio-scuro);
+  box-shadow: 0 1px 3px rgba(26,26,26,0.06);
 }
 
 button {
-  background: var(--mattone);
-  color: #fff;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 4px;
+  background: var(--nero);
+  color: var(--avorio);
+  border: 1px solid var(--nero);
+  padding: 9px 20px;
+  border-radius: 2px;
   cursor: pointer;
-  font-weight: 600;
+  font-family: 'EB Garamond', Georgia, serif;
+  font-weight: 500;
   font-size: 14px;
+  letter-spacing: 0.03em;
 }
-button:hover { opacity: 0.9; }
-button.secondary { background: var(--cuoio); }
-button.danger { background: #a33; }
+button:hover { background: var(--oro-scuro); border-color: var(--oro-scuro); }
+button.secondary { background: transparent; color: var(--nero); border: 1px solid var(--nero); }
+button.secondary:hover { background: var(--nero); color: var(--avorio); }
+button.danger { background: transparent; color: #8a2f2f; border: 1px solid #8a2f2f; }
+button.danger:hover { background: #8a2f2f; color: #fff; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 input, select, textarea {
   width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: 9px 11px;
+  border: 1px solid var(--avorio-scuro);
+  border-radius: 2px;
+  font-size: 15px;
+  font-family: 'EB Garamond', Georgia, serif;
   margin-bottom: 10px;
+  background: #fff;
+  color: var(--nero-testo);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--oro);
 }
 
 .badge {
   display: inline-block;
-  padding: 3px 10px;
-  border-radius: 12px;
+  padding: 3px 12px;
+  border-radius: 2px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
 }
-.badge.da_contattare { background: #eee; color: #555; }
-.badge.in_attesa { background: #fdf1d6; color: var(--ocra); }
-.badge.disponibile { background: #dff5e0; color: #2a7a2a; }
-.badge.non_disponibile { background: #fbdada; color: #a33; }
+.badge.da_contattare { background: var(--avorio-scuro); color: var(--grigio-testo); border-color: #ddd6c4; }
+.badge.in_attesa { background: #FBF3DD; color: var(--oro-scuro); border-color: var(--oro-chiaro); }
+.badge.disponibile { background: #EAF1E8; color: #2f5c33; border-color: #b8d4b8; }
+.badge.non_disponibile { background: #F5E7E5; color: #8a2f2f; border-color: #dcb8b4; }
 
 .row { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+
 .top-bar {
-  background: var(--mogano);
-  color: var(--pergamena);
-  padding: 14px 24px;
+  background: var(--nero);
+  color: var(--avorio);
+  padding: 16px 28px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 2px solid var(--oro);
 }
-.top-bar a { color: var(--pergamena); text-decoration: none; font-weight: 600; }
+.top-bar a {
+  color: var(--oro-chiaro);
+  text-decoration: none;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: 0.03em;
+}
+.top-bar a:hover { color: var(--oro); }
+.top-bar button {
+  background: transparent;
+  color: var(--avorio);
+  border: 1px solid var(--oro-chiaro);
+}
+.top-bar button:hover { background: var(--oro); color: var(--nero); border-color: var(--oro); }

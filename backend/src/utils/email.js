@@ -16,8 +16,8 @@ export async function inviaRichiestaDisponibilita({ to, nomeLavoratore, nomeEven
     to,
     subject: `Richiesta disponibilità - ${nomeEvento} (${dataFormattata})`,
     html: `
-      <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; color: #2C1810;">
-        <h2 style="color:#2C1810;">Richiesta di disponibilità</h2>
+      <div style="font-family: 'EB Garamond', Georgia, serif; max-width: 560px; margin: 0 auto; color: #1A1A1A; background: #F8F6F0; padding: 24px;">
+        <h2 style="color:#1A1A1A; font-family:'Cormorant Garamond', Georgia, serif;">Richiesta di disponibilità</h2>
         <p>Ciao ${nomeLavoratore},</p>
         <p>Ti proponiamo per il seguente evento:</p>
         <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
@@ -31,11 +31,11 @@ export async function inviaRichiestaDisponibilita({ to, nomeLavoratore, nomeEven
         </table>
         <p>Fai clic sul pulsante qui sotto per confermare o rifiutare la tua disponibilità:</p>
         <p style="text-align:center; margin: 24px 0;">
-          <a href="${link}" style="background:#C4501A; color:#fff; padding:12px 28px; text-decoration:none; border-radius:4px; font-weight:bold;">
+          <a href="${link}" style="background:#1A1A1A; border: 1px solid #9C8A2B; color:#fff; padding:12px 28px; text-decoration:none; border-radius:4px; font-weight:bold;">
             Rispondi alla richiesta
           </a>
         </p>
-        <p style="font-size: 13px; color: #8B5E3C;">Rock Srl Catering — Lanzarotti 1967 / Sport Catering</p>
+        <p style="font-size: 13px; color: #9C8A2B; border-top: 1px solid #EFEBDF; padding-top: 10px;">Rock Srl Catering — Lanzarotti 1967 / Sport Catering</p>
       </div>
     `
   });
@@ -46,7 +46,7 @@ export async function inviaListaSquadraAlReferente({ to, nomeEvento, dataEvento,
   const dataFormattata = new Date(dataEvento).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const righeSquadre = squadreConMembri.map(sq => `
-    <h3 style="color:#C4501A; margin-bottom:4px;">${sq.nome}</h3>
+    <h3 style="color:#9C8A2B; margin-bottom:4px;">${sq.nome}</h3>
     <ul style="margin-top:4px;">
       ${sq.membri.map(m => `<li>${m.nome} ${m.cognome} — ${m.ruolo_specifico || m.mansione}</li>`).join('')}
     </ul>
@@ -57,11 +57,11 @@ export async function inviaListaSquadraAlReferente({ to, nomeEvento, dataEvento,
     to,
     subject: `Squadra confermata - ${nomeEvento} (${dataFormattata})`,
     html: `
-      <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; color: #2C1810;">
+      <div style="font-family: 'EB Garamond', Georgia, serif; max-width: 560px; margin: 0 auto; color: #1A1A1A; background: #F8F6F0; padding: 24px;">
         <h2>Squadra confermata: ${nomeEvento}</h2>
         <p><strong>Data evento:</strong> ${dataFormattata}</p>
         ${righeSquadre}
-        <p style="font-size: 13px; color: #8B5E3C; margin-top:24px;">Rock Srl Catering</p>
+        <p style="font-size: 13px; color: #9C8A2B; border-top: 1px solid #EFEBDF; padding-top: 10px; margin-top:24px;">Rock Srl Catering</p>
       </div>
     `
   });
