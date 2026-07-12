@@ -1,6 +1,7 @@
 import express from 'express';
 import { query } from '../db.js';
 import { richiediAuth } from '../middleware/auth.js';
+import { richiediRuolo } from '../middleware/ruoli.js';
 
 const router = express.Router();
 router.use(richiediAuth);
@@ -46,8 +47,8 @@ router.get('/:id', async (req, res) => {
   res.json({ ...evento.rows[0], squadre: squadre.rows });
 });
 
-// Crea evento
-router.post('/', async (req, res) => {
+// Crea evento — solo responsabile di servizio
+router.post('/', richiediRuolo(['responsabile_servizio']), async (req, res) => {
   const { nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, note } = req.body;
   if (!nome || !data_evento) return res.status(400).json({ errore: 'nome e data_evento richiesti' });
 
@@ -59,8 +60,8 @@ router.post('/', async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
-// Aggiorna evento
-router.put('/:id', async (req, res) => {
+// Aggiorna evento — solo responsabile di servizio
+router.put('/:id', richiediRuolo(['responsabile_servizio']), async (req, res) => {
   const { id } = req.params;
   const campi = ['nome', 'brand', 'cliente', 'luogo', 'data_evento', 'ora_partenza_sede', 'ora_ritrovo_location', 'ora_inizio', 'ora_fine', 'numero_ospiti', 'referente_commerciale_id', 'stato', 'note'];
   const set = [];

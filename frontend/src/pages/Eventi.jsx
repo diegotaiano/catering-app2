@@ -15,6 +15,8 @@ export default function Eventi() {
   const [nuovoEvento, setNuovoEvento] = useState(VUOTO);
   const [errore, setErrore] = useState(null);
   const [annoAperto, setAnnoAperto] = useState(null);
+  const utente = JSON.parse(localStorage.getItem('utente') || 'null');
+  const puoCreare = utente?.ruolo === 'responsabile_servizio';
 
   async function carica() {
     const [ev, ref] = await Promise.all([api.getEventi(), api.getReferenti()]);
@@ -50,10 +52,12 @@ export default function Eventi() {
     <div className="container">
       <div className="row" style={{ marginBottom: 16 }}>
         <h1>Eventi</h1>
-        <button onClick={() => setMostraForm(!mostraForm)}>{mostraForm ? 'Annulla' : '+ Nuovo evento'}</button>
+        {puoCreare && (
+          <button onClick={() => setMostraForm(!mostraForm)}>{mostraForm ? 'Annulla' : '+ Nuovo evento'}</button>
+        )}
       </div>
 
-      {mostraForm && (
+      {mostraForm && puoCreare && (
         <div className="card">
           <h3>Nuovo evento</h3>
           {referenti.length === 0 && (

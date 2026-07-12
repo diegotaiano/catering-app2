@@ -58,6 +58,9 @@ export const api = {
     a.remove();
     window.URL.revokeObjectURL(url);
   },
+  getUtenti: () => request('/utenti'),
+  creaUtente: (dati) => request('/utenti', { method: 'POST', body: dati }),
+  aggiornaUtente: (id, dati) => request(`/utenti/${id}`, { method: 'PUT', body: dati }),
   creaSquadra: (evento_id, nome) => request('/squadre', { method: 'POST', body: { evento_id, nome } }),
   aggiungiMembro: (squadraId, lavoratore_id, ruolo_specifico) =>
     request(`/squadre/${squadraId}/membri`, { method: 'POST', body: { lavoratore_id, ruolo_specifico } }),

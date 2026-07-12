@@ -11,6 +11,8 @@ const ETICHETTE_STATO = {
 
 export default function EventoDetail() {
   const { id } = useParams();
+  const utente = JSON.parse(localStorage.getItem('utente') || 'null');
+  const puoModificare = utente?.ruolo === 'responsabile_servizio';
   const [evento, setEvento] = useState(null);
   const [lavoratori, setLavoratori] = useState([]);
   const [referenti, setReferenti] = useState([]);
@@ -125,16 +127,15 @@ export default function EventoDetail() {
             {evento.referente_nome ? ` · Referente: ${evento.referente_nome} ${evento.referente_cognome}` : ' · Nessun referente assegnato'}
           </p>
         </div>
-        <button className="secondary" onClick={() => setModificaAperta(!modificaAperta)}>
-          {modificaAperta ? 'Annulla' : 'Modifica evento'}
-        </button>
+        <button className="secondary" onClick={handleScaricaPdf}>Scarica PDF scheda servizio</button>
+        {puoModificare && (
+          <button className="secondary" onClick={() => setModificaAperta(!modificaAperta)}>
+            {modificaAperta ? 'Annulla' : 'Modifica evento'}
+          </button>
+        )}
       </div>
 
-      <div className="row" style={{ justifyContent: 'flex-end', marginBottom: 12 }}>
-        <button onClick={handleScaricaPdf}>Scarica PDF scheda servizio</button>
-      </div>
-
-      {modificaAperta && (
+      {modificaAperta && puoModificare && (
         <div className="card">
           <h3>Modifica evento</h3>
           <form onSubmit={handleSalvaEvento}>
@@ -206,13 +207,13 @@ export default function EventoDetail() {
               {assegnatoAQuestoEvento && (
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span className="badge disponibile">Assegnato a questo evento</span>
-                  <button className="danger" onClick={() => handleRimuoviFurgone(f.assegnazione_id)}>Rimuovi</button>
+                  {puoModificare && <button className="danger" onClick={() => handleRimuoviFurgone(f.assegnazione_id)}>Rimuovi</button>}
                 </div>
               )}
               {occupatoDaAltri && (
                 <span className="badge non_disponibile">Occupato su "{f.occupato_evento_nome}"</span>
               )}
-              {!f.occupato_evento_id && (
+              {!f.occupato_evento_id && puoModificare && (
                 <button className="secondary" onClick={() => handleAssegnaFurgone(f.id)}>Assegna a questo evento</button>
               )}
             </div>
@@ -223,20 +224,23 @@ export default function EventoDetail() {
         )}
       </div>
 
-      <div className="card">
-        <h3>Nuova squadra</h3>
-        <form onSubmit={handleCreaSquadra} className="row">
-          <input placeholder="es. Sala, Cucina, Bar" value={nuovaSquadra}
-            onChange={e => setNuovaSquadra(e.target.value)} style={{ marginBottom: 0 }} />
-          <button type="submit">Crea</button>
-        </form>
-      </div>
+      {puoModificare && (
+        <div className="card">
+          <h3>Nuova squadra</h3>
+          <form onSubmit={handleCreaSquadra} className="row">
+            <input placeholder="es. Sala, Cucina, Bar" value={nuovaSquadra}
+              onChange={e => setNuovaSquadra(e.target.value)} style={{ marginBottom: 0 }} />
+            <button type="submit">Crea</button>
+          </form>
+        </div>
+      )}
 
       {evento.squadre.map(sq => (
         <SquadraCard
           key={sq.id}
           squadra={sq}
           lavoratori={lavoratori}
+          puoModificare={puoModificare}
           onAggiungiMembro={handleAggiungiMembro}
           onInviaRichieste={handleInviaRichieste}
           onConfermaEInvia={handleConfermaEInvia}
@@ -247,7 +251,7 @@ export default function EventoDetail() {
   );
 }
 
-function SquadraCard({ squadra, lavoratori, onAggiungiMembro, onInviaRichieste, onConfermaEInvia, onRimuovi }) {
+function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onInviaRichieste, onConfermaEInvia, onRimuovi }) {
   const [lavoratoreId, setLavoratoreId] = useState('');
   const [ruolo, setRuolo] = useState('');
 
@@ -266,30 +270,34 @@ function SquadraCard({ squadra, lavoratori, onAggiungiMembro, onInviaRichieste, 
           <span>{m.nome} {m.cognome} {m.ruolo_specifico ? `— ${m.ruolo_specifico}` : ''} <em style={{ color: '#999' }}>({m.mansione})</em></span>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span className={`badge ${m.stato_disponibilita}`}>{ETICHETTE_STATO[m.stato_disponibilita]}</span>
-            <button className="danger" onClick={() => onRimuovi(m.id)}>Rimuovi</button>
+            {puoModificare && <button className="danger" onClick={() => onRimuovi(m.id)}>Rimuovi</button>}
           </div>
         </div>
       ))}
 
-      <div className="row" style={{ marginTop: 12 }}>
-        <select value={lavoratoreId} onChange={e => setLavoratoreId(e.target.value)} style={{ marginBottom: 0 }}>
-          <option value="">Aggiungi lavoratore...</option>
-          {lavoratori.map(l => <option key={l.id} value={l.id}>{l.nome} {l.cognome} ({l.mansione})</option>)}
-        </select>
-        <input placeholder="Ruolo (opz.)" value={ruolo} onChange={e => setRuolo(e.target.value)} style={{ marginBottom: 0 }} />
-        <button onClick={() => { onAggiungiMembro(squadra.id, lavoratoreId, ruolo); setLavoratoreId(''); setRuolo(''); }}>
-          Aggiungi
-        </button>
-      </div>
+      {puoModificare && (
+        <>
+          <div className="row" style={{ marginTop: 12 }}>
+            <select value={lavoratoreId} onChange={e => setLavoratoreId(e.target.value)} style={{ marginBottom: 0 }}>
+              <option value="">Aggiungi lavoratore...</option>
+              {lavoratori.map(l => <option key={l.id} value={l.id}>{l.nome} {l.cognome} ({l.mansione})</option>)}
+            </select>
+            <input placeholder="Ruolo (opz.)" value={ruolo} onChange={e => setRuolo(e.target.value)} style={{ marginBottom: 0 }} />
+            <button onClick={() => { onAggiungiMembro(squadra.id, lavoratoreId, ruolo); setLavoratoreId(''); setRuolo(''); }}>
+              Aggiungi
+            </button>
+          </div>
 
-      <div className="row" style={{ marginTop: 12 }}>
-        <button className="secondary" disabled={!cePersoneDaContattare} onClick={() => onInviaRichieste(squadra.id)}>
-          Invia richieste disponibilità
-        </button>
-        <button disabled={!tuttiDisponibili} onClick={() => onConfermaEInvia(squadra.id)}>
-          Conferma e invia al cliente
-        </button>
-      </div>
+          <div className="row" style={{ marginTop: 12 }}>
+            <button className="secondary" disabled={!cePersoneDaContattare} onClick={() => onInviaRichieste(squadra.id)}>
+              Invia richieste disponibilità
+            </button>
+            <button disabled={!tuttiDisponibili} onClick={() => onConfermaEInvia(squadra.id)}>
+              Conferma e invia al cliente
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,14 +1,16 @@
 import express from 'express';
 import { query } from '../db.js';
 import { richiediAuth } from '../middleware/auth.js';
+import { richiediRuolo } from '../middleware/ruoli.js';
 import { generaTokenRisposta, scadenzaDefault } from '../utils/token.js';
 import { inviaRichiestaDisponibilita, inviaListaSquadraAlReferente } from '../utils/email.js';
 
 const router = express.Router();
 router.use(richiediAuth);
+const soloResponsabile = richiediRuolo(['responsabile_servizio']);
 
 // Crea una nuova squadra per un evento (es. "Sala", "Cucina")
-router.post('/', async (req, res) => {
+router.post('/', soloResponsabile, async (req, res) => {
   const { evento_id, nome } = req.body;
   if (!evento_id || !nome) return res.status(400).json({ errore: 'evento_id e nome richiesti' });
 
@@ -20,7 +22,7 @@ router.post('/', async (req, res) => {
 });
 
 // Aggiungi un lavoratore a una squadra (stato iniziale: da_contattare)
-router.post('/:squadraId/membri', async (req, res) => {
+router.post('/:squadraId/membri', soloResponsabile, async (req, res) => {
   const { squadraId } = req.params;
   const { lavoratore_id, ruolo_specifico } = req.body;
   if (!lavoratore_id) return res.status(400).json({ errore: 'lavoratore_id richiesto' });
@@ -36,13 +38,13 @@ router.post('/:squadraId/membri', async (req, res) => {
 });
 
 // Rimuovi un membro dalla squadra
-router.delete('/membri/:membroId', async (req, res) => {
+router.delete('/membri/:membroId', soloResponsabile, async (req, res) => {
   await query('DELETE FROM squadra_membri WHERE id = $1', [req.params.membroId]);
   res.status(204).send();
 });
 
 // Invia (o re-invia) le richieste di disponibilità a tutti i membri "da_contattare" di una squadra
-router.post('/:squadraId/invia-richieste', async (req, res) => {
+router.post('/:squadraId/invia-richieste', soloResponsabile, async (req, res) => {
   const { squadraId } = req.params;
 
   const squadraRes = await query(
@@ -96,7 +98,7 @@ router.post('/:squadraId/invia-richieste', async (req, res) => {
 });
 
 // Conferma la squadra e invia la lista al referente commerciale
-router.post('/:squadraId/conferma-e-invia-cliente', async (req, res) => {
+router.post('/:squadraId/conferma-e-invia-cliente', soloResponsabile, async (req, res) => {
   const { squadraId } = req.params;
 
   const squadraRes = await query(

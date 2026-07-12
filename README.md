@@ -14,10 +14,13 @@ catering-app/
 
 ## Chi accede a cosa
 
-- **Responsabile di servizio**: login con email/password, vede dashboard eventi/squadre.
+- **Responsabile di servizio**: login con email/password, pieno accesso — crea/modifica eventi, squadre, furgoni, anagrafica.
+- **Capisquadra**: login con email/password, ma **sola lettura** — vede eventi, squadre e furgoni ma non può crearli o modificarli. Utile per chi deve solo consultare la situazione senza rischiare di alterarla.
 - **Lavoratori**: nessun account. Ricevono una email con un link univoco e rispondono
   Disponibile/Non disponibile senza autenticarsi.
 - **Referente commerciale**: riceve solo l'email finale con la squadra confermata.
+
+I nuovi utenti (responsabile di servizio o capisquadra) si creano direttamente dall'app, in Anagrafica → "Utenti app" (visibile solo a chi è già responsabile di servizio).
 
 ## Setup Database (Neon o altro Postgres)
 

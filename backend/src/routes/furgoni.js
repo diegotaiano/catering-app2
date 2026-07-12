@@ -1,9 +1,11 @@
 import express from 'express';
 import { query } from '../db.js';
 import { richiediAuth } from '../middleware/auth.js';
+import { richiediRuolo } from '../middleware/ruoli.js';
 
 const router = express.Router();
 router.use(richiediAuth);
+const soloResponsabile = richiediRuolo(['responsabile_servizio']);
 
 // Anagrafica furgoni
 router.get('/', async (req, res) => {
@@ -11,7 +13,7 @@ router.get('/', async (req, res) => {
   res.json(rows);
 });
 
-router.post('/', async (req, res) => {
+router.post('/', soloResponsabile, async (req, res) => {
   const { nome, targa, note } = req.body;
   if (!nome) return res.status(400).json({ errore: 'nome richiesto' });
   const { rows } = await query(
@@ -21,7 +23,7 @@ router.post('/', async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', soloResponsabile, async (req, res) => {
   const { id } = req.params;
   const { nome, targa, note } = req.body;
   const { rows } = await query(
@@ -32,7 +34,7 @@ router.put('/:id', async (req, res) => {
   res.json(rows[0]);
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', soloResponsabile, async (req, res) => {
   await query('UPDATE furgoni SET attivo = false WHERE id = $1', [req.params.id]);
   res.status(204).send();
 });
@@ -55,7 +57,7 @@ router.get('/disponibilita/:data', async (req, res) => {
 });
 
 // Assegna un furgone a un evento (usa la data dell'evento)
-router.post('/assegna', async (req, res) => {
+router.post('/assegna', soloResponsabile, async (req, res) => {
   const { furgone_id, evento_id } = req.body;
   if (!furgone_id || !evento_id) return res.status(400).json({ errore: 'furgone_id e evento_id richiesti' });
 
@@ -86,7 +88,7 @@ router.post('/assegna', async (req, res) => {
 });
 
 // Rimuovi assegnazione furgone da un evento
-router.delete('/assegnazioni/:id', async (req, res) => {
+router.delete('/assegnazioni/:id', soloResponsabile, async (req, res) => {
   await query('DELETE FROM furgone_assegnazioni WHERE id = $1', [req.params.id]);
   res.status(204).send();
 });

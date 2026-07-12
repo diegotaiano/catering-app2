@@ -5,6 +5,8 @@ const MANSIONI = ['cameriere', 'barista', 'cuoco', 'chef_di_rango', 'plonge', 'f
 
 export default function Anagrafica() {
   const [scheda, setScheda] = useState('lavoratori');
+  const utente = JSON.parse(localStorage.getItem('utente') || 'null');
+  const puoGestireUtenti = utente?.ruolo === 'responsabile_servizio';
 
   return (
     <div className="container">
@@ -19,9 +21,17 @@ export default function Anagrafica() {
         <button className={scheda === 'furgoni' ? '' : 'secondary'} onClick={() => setScheda('furgoni')}>
           Furgoni
         </button>
+        {puoGestireUtenti && (
+          <button className={scheda === 'utenti' ? '' : 'secondary'} onClick={() => setScheda('utenti')}>
+            Utenti app
+          </button>
+        )}
       </div>
 
-      {scheda === 'lavoratori' ? <SchedaLavoratori /> : scheda === 'referenti' ? <SchedaReferenti /> : <SchedaFurgoni />}
+      {scheda === 'lavoratori' ? <SchedaLavoratori />
+        : scheda === 'referenti' ? <SchedaReferenti />
+        : scheda === 'furgoni' ? <SchedaFurgoni />
+        : <SchedaUtenti />}
     </div>
   );
 }
@@ -282,6 +292,104 @@ function SchedaFurgoni() {
         </div>
       ))}
       {lista.length === 0 && <p>Nessun furgone ancora inserito.</p>}
+    </div>
+  );
+}
+
+// ---------- UTENTI APP (solo responsabile di servizio) ----------
+
+function SchedaUtenti() {
+  const [lista, setLista] = useState([]);
+  const [mostraForm, setMostraForm] = useState(false);
+  const [errore, setErrore] = useState(null);
+  const [form, setForm] = useState({ nome: '', cognome: '', email: '', password: '', ruolo: 'capisquadra' });
+  const utenteCorrente = JSON.parse(localStorage.getItem('utente') || 'null');
+
+  async function carica() {
+    setLista(await api.getUtenti());
+  }
+  useEffect(() => { carica(); }, []);
+
+  async function creaUtente(e) {
+    e.preventDefault();
+    setErrore(null);
+    try {
+      await api.creaUtente(form);
+      setForm({ nome: '', cognome: '', email: '', password: '', ruolo: 'capisquadra' });
+      setMostraForm(false);
+      carica();
+    } catch (err) {
+      setErrore(err.message);
+    }
+  }
+
+  async function cambiaRuolo(u, nuovoRuolo) {
+    await api.aggiornaUtente(u.id, { ruolo: nuovoRuolo });
+    carica();
+  }
+
+  async function disattiva(u) {
+    if (u.id === utenteCorrente?.id) { alert('Non puoi disattivare il tuo stesso account.'); return; }
+    if (!confirm(`Disattivare l'accesso di ${u.nome} ${u.cognome}?`)) return;
+    await api.aggiornaUtente(u.id, { attivo: false });
+    carica();
+  }
+
+  async function riattiva(u) {
+    await api.aggiornaUtente(u.id, { attivo: true });
+    carica();
+  }
+
+  return (
+    <div>
+      <p style={{ color: '#8B5E3C', fontSize: 13, marginBottom: 12 }}>
+        <strong>Responsabile di servizio</strong>: può creare e modificare eventi.{' '}
+        <strong>Capisquadra</strong>: può consultare eventi, squadre e furgoni ma non crearne o modificarne.
+      </p>
+      <div className="row" style={{ marginBottom: 12 }}>
+        <p style={{ margin: 0, color: '#8B5E3C' }}>{lista.length} utenti</p>
+        <button onClick={() => setMostraForm(!mostraForm)}>{mostraForm ? 'Annulla' : '+ Nuovo utente'}</button>
+      </div>
+
+      {mostraForm && (
+        <div className="card">
+          <h3>Nuovo utente</h3>
+          <form onSubmit={creaUtente}>
+            <div className="row">
+              <input placeholder="Nome" value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} required />
+              <input placeholder="Cognome" value={form.cognome} onChange={e => setForm({ ...form, cognome: e.target.value })} required />
+            </div>
+            <input type="email" placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+            <input type="password" placeholder="Password iniziale" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required />
+            <select value={form.ruolo} onChange={e => setForm({ ...form, ruolo: e.target.value })}>
+              <option value="capisquadra">Capisquadra (sola lettura)</option>
+              <option value="responsabile_servizio">Responsabile di servizio (pieno accesso)</option>
+            </select>
+            {errore && <p style={{ color: '#a33' }}>{errore}</p>}
+            <button type="submit">Crea utente</button>
+          </form>
+        </div>
+      )}
+
+      {lista.map(u => (
+        <div key={u.id} className="card" style={{ opacity: u.attivo ? 1 : 0.5 }}>
+          <div className="row">
+            <div>
+              <strong>{u.nome} {u.cognome}</strong> {u.id === utenteCorrente?.id && <span style={{ fontSize: 12, color: '#8B5E3C' }}>(tu)</span>}
+              <p style={{ margin: '4px 0', color: '#8B5E3C' }}>{u.email}</p>
+              <select value={u.ruolo} onChange={e => cambiaRuolo(u, e.target.value)} style={{ marginBottom: 0, width: 260 }}>
+                <option value="capisquadra">Capisquadra (sola lettura)</option>
+                <option value="responsabile_servizio">Responsabile di servizio (pieno accesso)</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {u.attivo
+                ? <button className="danger" onClick={() => disattiva(u)}>Disattiva</button>
+                : <button className="secondary" onClick={() => riattiva(u)}>Riattiva</button>}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import lavoratoriRoutes from './routes/lavoratori.js';
 import referentiRoutes from './routes/referenti.js';
 import furgoniRoutes from './routes/furgoni.js';
 import pdfRoutes from './routes/pdf.js';
+import utentiRoutes from './routes/utenti.js';
 
 const app = express();
 app.use(cors());
@@ -24,6 +25,7 @@ app.use('/api/lavoratori', lavoratoriRoutes);
 app.use('/api/referenti', referentiRoutes);
 app.use('/api/furgoni', furgoniRoutes);
 app.use('/api', pdfRoutes);
+app.use('/api/utenti', utentiRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
