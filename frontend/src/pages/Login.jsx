@@ -28,10 +28,11 @@ export default function Login() {
         <div style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 700, fontSize: 20, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--nero)', marginTop: 8 }}>
           Lanzarotti <span style={{ color: 'var(--oro)' }}>1967</span>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--grigio-testo)', letterSpacing: '0.05em', marginTop: 2 }}>Gestione Squadre</div>
+        <div style={{ fontSize: 13, color: 'var(--grigio-testo)', letterSpacing: '0.08em', marginTop: 4, fontFamily: "'EB Garamond', Georgia, serif", textTransform: 'uppercase' }}>
+          Eventi di successo dal 1967
+        </div>
       </div>
       <div className="card">
-        <h2>Accesso Responsabile di Servizio</h2>
         <form onSubmit={handleSubmit}>
           <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
           <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
