@@ -1,7 +1,7 @@
 {
-  "name": "Rock Srl Catering - Gestione Squadre",
+  "name": "Rock Srl Catering - Gestione Eventi",
   "short_name": "RS Catering",
-  "description": "Gestione squadre, disponibilità e furgoni per eventi catering",
+  "description": "Gestione eventi, squadre, disponibilità e furgoni per il catering",
   "start_url": "/eventi",
   "display": "standalone",
   "background_color": "#F8F6F0",
