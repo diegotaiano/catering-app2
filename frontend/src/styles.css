@@ -1,0 +1,74 @@
+:root {
+  --mogano: #2C1810;
+  --mattone: #C4501A;
+  --ocra: #D4A84B;
+  --cuoio: #8B5E3C;
+  --pergamena: #F5EDD8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--pergamena);
+  color: var(--mogano);
+}
+
+h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+.container { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(44,24,16,0.1);
+}
+
+button {
+  background: var(--mattone);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+button:hover { opacity: 0.9; }
+button.secondary { background: var(--cuoio); }
+button.danger { background: #a33; }
+
+input, select, textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge.da_contattare { background: #eee; color: #555; }
+.badge.in_attesa { background: #fdf1d6; color: var(--ocra); }
+.badge.disponibile { background: #dff5e0; color: #2a7a2a; }
+.badge.non_disponibile { background: #fbdada; color: #a33; }
+
+.row { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.top-bar {
+  background: var(--mogano);
+  color: var(--pergamena);
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.top-bar a { color: var(--pergamena); text-decoration: none; font-weight: 600; }
