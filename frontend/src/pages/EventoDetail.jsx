@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { haAccessoCompleto } from '../ruoli.js';
 
@@ -12,6 +12,7 @@ const ETICHETTE_STATO = {
 
 export default function EventoDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const utente = JSON.parse(localStorage.getItem('utente') || 'null');
   const puoModificare = haAccessoCompleto(utente);
   const [evento, setEvento] = useState(null);
@@ -121,6 +122,16 @@ export default function EventoDetail() {
     }
   }
 
+  async function handleEliminaEvento() {
+    if (!confirm(`Eliminare definitivamente "${evento.nome}"? Questa azione non si può annullare: verranno eliminate anche squadre e assegnazioni furgoni collegate.`)) return;
+    try {
+      await api.eliminaEvento(id);
+      navigate('/eventi');
+    } catch (err) {
+      setMessaggio(`Errore: ${err.message}`);
+    }
+  }
+
   if (!evento || !formEvento) return <div className="container">Caricamento...</div>;
 
   return (
@@ -139,6 +150,9 @@ export default function EventoDetail() {
           <button className="secondary" onClick={() => setModificaAperta(!modificaAperta)}>
             {modificaAperta ? 'Annulla' : 'Modifica evento'}
           </button>
+        )}
+        {puoModificare && (
+          <button className="danger" onClick={handleEliminaEvento}>Elimina evento</button>
         )}
       </div>
 

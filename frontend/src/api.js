@@ -27,6 +27,7 @@ export const api = {
   getEvento: (id) => request(`/eventi/${id}`),
   creaEvento: (dati) => request('/eventi', { method: 'POST', body: dati }),
   aggiornaEvento: (id, dati) => request(`/eventi/${id}`, { method: 'PUT', body: dati }),
+  eliminaEvento: (id) => request(`/eventi/${id}`, { method: 'DELETE' }),
   getLavoratori: () => request('/lavoratori'),
   creaLavoratore: (dati) => request('/lavoratori', { method: 'POST', body: dati }),
   aggiornaLavoratore: (id, dati) => request(`/lavoratori/${id}`, { method: 'PUT', body: dati }),

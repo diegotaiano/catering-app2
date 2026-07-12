@@ -101,4 +101,12 @@ router.put('/:id', richiediRuolo(ACCESSO_COMPLETO), async (req, res) => {
   res.json(rows[0]);
 });
 
+// Elimina evento — solo chi ha accesso completo. Elimina a cascata squadre/membri e assegnazioni furgoni.
+router.delete('/:id', richiediRuolo(ACCESSO_COMPLETO), async (req, res) => {
+  const { id } = req.params;
+  const eliminato = await query('DELETE FROM eventi WHERE id = $1 RETURNING id', [id]);
+  if (!eliminato.rows[0]) return res.status(404).json({ errore: 'Evento non trovato' });
+  res.status(204).send();
+});
+
 export default router;
