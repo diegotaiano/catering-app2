@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { haAccessoCompleto } from '../ruoli.js';
 
-const MANSIONI = ['cameriere', 'barista', 'cuoco', 'chef_di_rango', 'plonge', 'facchino', 'altro'];
+const MANSIONI = ['Chef', 'Aiuto Cucina', 'Sbarazzo', 'Capo servizio', 'Cameriere', 'Barman'];
 
 export default function Anagrafica() {
   const [scheda, setScheda] = useState('lavoratori');
@@ -45,7 +45,7 @@ function SchedaLavoratori() {
   const [form, setForm] = useState(vuotoLavoratore());
 
   function vuotoLavoratore() {
-    return { nome: '', cognome: '', email: '', telefono: '', mansione: 'cameriere', note: '' };
+    return { nome: '', cognome: '', email: '', telefono: '', mansione: 'Cameriere', note: '' };
   }
 
   async function carica() {
@@ -96,7 +96,7 @@ function SchedaLavoratori() {
             </div>
             <input type="email" placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
             <input placeholder="Telefono" value={form.telefono || ''} onChange={e => setForm({ ...form, telefono: e.target.value })} />
-            <select value={form.mansione || 'cameriere'} onChange={e => setForm({ ...form, mansione: e.target.value })}>
+            <select value={form.mansione || 'Cameriere'} onChange={e => setForm({ ...form, mansione: e.target.value })}>
               {MANSIONI.map(m => <option key={m} value={m}>{m.replace('_', ' ')}</option>)}
             </select>
             <textarea placeholder="Note (opzionale)" value={form.note || ''} onChange={e => setForm({ ...form, note: e.target.value })} rows={2} />
