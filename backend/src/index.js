@@ -24,7 +24,7 @@ app.use('/api/disponibilita', disponibilitaRoutes); // pubblico, nessun auth
 app.use('/api/lavoratori', lavoratoriRoutes);
 app.use('/api/referenti', referentiRoutes);
 app.use('/api/furgoni', furgoniRoutes);
-app.use('/api', pdfRoutes);
+app.use('/api/eventi', pdfRoutes);
 app.use('/api/utenti', utentiRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));

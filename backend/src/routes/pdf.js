@@ -7,7 +7,7 @@ import { generaPdfEvento } from '../utils/pdf.js';
 const router = express.Router();
 router.use(richiediAuth);
 
-router.get('/eventi/:id/pdf', async (req, res) => {
+router.get('/:id/pdf', async (req, res) => {
   const { id } = req.params;
 
   const eventoRes = await query(
