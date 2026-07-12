@@ -28,7 +28,7 @@ function TopBar() {
       <Link to="/eventi" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
         <img src="/logo-shield-gold.png" alt="Lanzarotti 1967" style={{ height: 34 }} />
         <span style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 700, fontSize: 15, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--oro-chiaro)' }}>
-          Lanzarotti 1967 <span style={{ opacity: 0.7, fontWeight: 600 }}>· Gestione Squadre</span>
+          Lanzarotti 1967 <span style={{ opacity: 0.7, fontWeight: 600 }}>· Gestione Eventi</span>
         </span>
       </Link>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
