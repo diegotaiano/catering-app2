@@ -19,7 +19,7 @@ export default function EventoDetail() {
   const [lavoratori, setLavoratori] = useState([]);
   const [referenti, setReferenti] = useState([]);
   const [capiServizio, setCapiServizio] = useState([]);
-  const [nuovaSquadra, setNuovaSquadra] = useState('');
+  const [nuovaSquadra, setNuovaSquadra] = useState('Personale evento');
   const [messaggio, setMessaggio] = useState(null);
   const [modificaAperta, setModificaAperta] = useState(false);
   const [formEvento, setFormEvento] = useState(null);
@@ -254,11 +254,14 @@ export default function EventoDetail() {
         )}
       </div>
 
-      {puoModificare && (
+      {puoModificare && evento.squadre.length === 0 && (
         <div className="card">
-          <h3>Nuova squadra</h3>
+          <h3>Crea lista personale per questo evento</h3>
+          <p style={{ fontSize: 13, color: '#8B5E3C' }}>
+            Questo evento è stato creato prima dell'introduzione della lista automatica: creala qui una volta sola.
+          </p>
           <form onSubmit={handleCreaSquadra} className="row">
-            <input placeholder="es. Sala, Cucina, Bar" value={nuovaSquadra}
+            <input placeholder="es. Personale evento" value={nuovaSquadra}
               onChange={e => setNuovaSquadra(e.target.value)} style={{ marginBottom: 0 }} />
             <button type="submit">Crea</button>
           </form>
@@ -312,7 +315,7 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onI
               <option value="">Aggiungi lavoratore...</option>
               {lavoratori.map(l => <option key={l.id} value={l.id}>{l.nome} {l.cognome} ({l.mansione})</option>)}
             </select>
-            <input placeholder="Ruolo (opz.)" value={ruolo} onChange={e => setRuolo(e.target.value)} style={{ marginBottom: 0 }} />
+            <input placeholder="Mansione per questo evento (es. Capo sala, Runner)" value={ruolo} onChange={e => setRuolo(e.target.value)} style={{ marginBottom: 0 }} />
             <button onClick={() => { onAggiungiMembro(squadra.id, lavoratoreId, ruolo); setLavoratoreId(''); setRuolo(''); }}>
               Aggiungi
             </button>

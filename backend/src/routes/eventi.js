@@ -80,6 +80,13 @@ router.post('/', richiediRuolo(ACCESSO_COMPLETO), async (req, res) => {
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
     [nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, capo_servizio_id, req.utente.id, note]
   );
+
+  // Ogni evento ha una lista personale unica, creata automaticamente (non serve più il passaggio manuale "crea squadra")
+  await query(
+    `INSERT INTO squadre (evento_id, nome, creata_da) VALUES ($1, 'Personale evento', $2)`,
+    [rows[0].id, req.utente.id]
+  );
+
   res.status(201).json(rows[0]);
 });
 
