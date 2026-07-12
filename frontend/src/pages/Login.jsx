@@ -22,7 +22,14 @@ export default function Login() {
   }
 
   return (
-    <div className="container" style={{ maxWidth: 380, marginTop: 80 }}>
+    <div className="container" style={{ maxWidth: 380, marginTop: 60 }}>
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <img src="/logo-shield-gold.png" alt="Lanzarotti 1967" style={{ height: 90 }} />
+        <div style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 700, fontSize: 20, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--nero)', marginTop: 8 }}>
+          Lanzarotti <span style={{ color: 'var(--oro)' }}>1967</span>
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--grigio-testo)', letterSpacing: '0.05em', marginTop: 2 }}>Gestione Squadre</div>
+      </div>
       <div className="card">
         <h2>Accesso Responsabile di Servizio</h2>
         <form onSubmit={handleSubmit}>
