@@ -43,6 +43,21 @@ export const api = {
   getFurgoniEvento: (eventoId) => request(`/furgoni/evento/${eventoId}`),
   assegnaFurgone: (furgone_id, evento_id) => request('/furgoni/assegna', { method: 'POST', body: { furgone_id, evento_id } }),
   rimuoviAssegnazioneFurgone: (assegnazioneId) => request(`/furgoni/assegnazioni/${assegnazioneId}`, { method: 'DELETE' }),
+  scaricaPdfEvento: async (eventoId) => {
+    const res = await fetch(`${API_URL}/eventi/${eventoId}/pdf`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    if (!res.ok) throw new Error('Impossibile generare il PDF');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `scheda-servizio-${eventoId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
   creaSquadra: (evento_id, nome) => request('/squadre', { method: 'POST', body: { evento_id, nome } }),
   aggiungiMembro: (squadraId, lavoratore_id, ruolo_specifico) =>
     request(`/squadre/${squadraId}/membri`, { method: 'POST', body: { lavoratore_id, ruolo_specifico } }),

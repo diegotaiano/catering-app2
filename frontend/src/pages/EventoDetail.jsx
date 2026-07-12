@@ -105,6 +105,14 @@ export default function EventoDetail() {
     carica();
   }
 
+  async function handleScaricaPdf() {
+    try {
+      await api.scaricaPdfEvento(id);
+    } catch (err) {
+      setMessaggio(`Errore: ${err.message}`);
+    }
+  }
+
   if (!evento || !formEvento) return <div className="container">Caricamento...</div>;
 
   return (
@@ -120,6 +128,10 @@ export default function EventoDetail() {
         <button className="secondary" onClick={() => setModificaAperta(!modificaAperta)}>
           {modificaAperta ? 'Annulla' : 'Modifica evento'}
         </button>
+      </div>
+
+      <div className="row" style={{ justifyContent: 'flex-end', marginBottom: 12 }}>
+        <button onClick={handleScaricaPdf}>Scarica PDF scheda servizio</button>
       </div>
 
       {modificaAperta && (
