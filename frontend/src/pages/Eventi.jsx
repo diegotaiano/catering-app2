@@ -87,10 +87,11 @@ export default function Eventi() {
       {mostraForm && puoCreare && (
         <div className="card">
           <h3>Nuovo evento</h3>
-          {referenti.length === 0 && (
+          {(referenti.length === 0 || capiServizio.length === 0) && (
             <p style={{ color: '#a33' }}>
-              Non hai ancora nessun referente commerciale in anagrafica. Puoi comunque creare l'evento
-              e assegnarlo dopo, ma senza referente non potrai inviare la lista squadra al cliente.{' '}
+              Referente commerciale e capo servizio sono obbligatori per creare un evento.{' '}
+              {referenti.length === 0 && 'Non hai ancora nessun referente commerciale in anagrafica. '}
+              {capiServizio.length === 0 && 'Non hai ancora nessun utente con ruolo capo servizio. '}
               <Link to="/anagrafica">Vai in Anagrafica →</Link>
             </p>
           )}
@@ -143,16 +144,16 @@ export default function Eventi() {
             <div className="row">
               <input type="number" placeholder="Numero ospiti" value={nuovoEvento.numero_ospiti}
                 onChange={e => setNuovoEvento({ ...nuovoEvento, numero_ospiti: e.target.value })} />
-              <select value={nuovoEvento.referente_commerciale_id}
+              <select value={nuovoEvento.referente_commerciale_id} required
                 onChange={e => setNuovoEvento({ ...nuovoEvento, referente_commerciale_id: e.target.value })}>
-                <option value="">Referente commerciale...</option>
+                <option value="">Referente commerciale... *</option>
                 {referenti.map(r => <option key={r.id} value={r.id}>{r.nome} {r.cognome}</option>)}
               </select>
             </div>
 
-            <select value={nuovoEvento.capo_servizio_id}
+            <select value={nuovoEvento.capo_servizio_id} required
               onChange={e => setNuovoEvento({ ...nuovoEvento, capo_servizio_id: e.target.value })}>
-              <option value="">Capo servizio (chi gestirà l'evento)...</option>
+              <option value="">Capo servizio (chi gestirà l'evento)... *</option>
               {capiServizio.map(u => <option key={u.id} value={u.id}>{u.nome} {u.cognome}</option>)}
             </select>
 

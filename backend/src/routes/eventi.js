@@ -99,6 +99,8 @@ router.get('/:id', async (req, res) => {
 router.post('/', richiediRuolo(ACCESSO_COMPLETO), async (req, res) => {
   const { nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, capo_servizio_id, note } = req.body;
   if (!nome || !data_evento) return res.status(400).json({ errore: 'nome e data_evento richiesti' });
+  if (!referente_commerciale_id) return res.status(400).json({ errore: 'Il referente commerciale è obbligatorio' });
+  if (!capo_servizio_id) return res.status(400).json({ errore: 'Il capo servizio è obbligatorio' });
 
   const { rows } = await query(
     `INSERT INTO eventi (nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, capo_servizio_id, responsabile_servizio_id, note)
