@@ -142,8 +142,12 @@ export default function EventoDetail() {
           <p style={{ color: '#8B5E3C', margin: 0 }}>
             {new Date(evento.data_evento).toLocaleDateString('it-IT')} · {evento.luogo || 'luogo da definire'} · {evento.numero_ospiti || '?'} ospiti
             {evento.referente_nome ? ` · Referente: ${evento.referente_nome} ${evento.referente_cognome}` : ' · Nessun referente assegnato'}
-            {evento.capo_servizio_nome ? ` · Capo servizio: ${evento.capo_servizio_nome} ${evento.capo_servizio_cognome}` : ''}
           </p>
+          <div style={{ marginTop: 8 }}>
+            <span className={`badge ${evento.capo_servizio_nome ? 'disponibile' : 'da_contattare'}`} style={{ fontSize: 13 }}>
+              Evento assegnato a: {evento.capo_servizio_nome ? `${evento.capo_servizio_nome} ${evento.capo_servizio_cognome}` : 'nessun capo servizio'}
+            </span>
+          </div>
         </div>
         <button className="secondary" onClick={handleScaricaPdf}>Scarica PDF scheda servizio</button>
         {puoModificare && (

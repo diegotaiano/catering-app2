@@ -61,6 +61,17 @@ export default function Eventi() {
         )}
       </div>
 
+      {utente?.ruolo === 'capo_servizio' && (
+        <p style={{ color: '#8B5E3C', fontSize: 13, marginTop: -8, marginBottom: 16 }}>
+          Stai vedendo solo gli eventi a cui sei stato assegnato come capo servizio.
+        </p>
+      )}
+      {utente?.ruolo === 'referente_commerciale' && (
+        <p style={{ color: '#8B5E3C', fontSize: 13, marginTop: -8, marginBottom: 16 }}>
+          Stai vedendo solo gli eventi di cui sei il referente commerciale.
+        </p>
+      )}
+
       {mostraForm && puoCreare && (
         <div className="card">
           <h3>Nuovo evento</h3>
@@ -196,8 +207,10 @@ function CardEvento({ ev }) {
             <p style={{ margin: '4px 0', color: '#8B5E3C' }}>
               {new Date(ev.data_evento).toLocaleDateString('it-IT')} · {ev.luogo || 'luogo da definire'}
               {ev.referente_nome ? ` · Referente: ${ev.referente_nome} ${ev.referente_cognome}` : ' · Nessun referente assegnato'}
-              {ev.capo_servizio_nome ? ` · Capo servizio: ${ev.capo_servizio_nome} ${ev.capo_servizio_cognome}` : ''}
             </p>
+            <span className={`badge ${ev.capo_servizio_nome ? 'disponibile' : 'da_contattare'}`}>
+              {ev.capo_servizio_nome ? `Assegnato a: ${ev.capo_servizio_nome} ${ev.capo_servizio_cognome}` : 'Nessun capo servizio assegnato'}
+            </span>
           </div>
           <span className="badge da_contattare">{ev.stato}</span>
         </div>
