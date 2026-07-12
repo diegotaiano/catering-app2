@@ -1,27 +1,30 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
+import { haAccessoCompleto } from '../ruoli.js';
 
 const VUOTO = {
   nome: '', brand: 'Lanzarotti1967', cliente: '', data_evento: '',
   ora_partenza_sede: '', ora_ritrovo_location: '', ora_inizio: '', ora_fine: '',
-  luogo: '', numero_ospiti: '', referente_commerciale_id: '', note: ''
+  luogo: '', numero_ospiti: '', referente_commerciale_id: '', capo_servizio_id: '', note: ''
 };
 
 export default function Eventi() {
   const [eventi, setEventi] = useState([]);
   const [referenti, setReferenti] = useState([]);
+  const [capiServizio, setCapiServizio] = useState([]);
   const [mostraForm, setMostraForm] = useState(false);
   const [nuovoEvento, setNuovoEvento] = useState(VUOTO);
   const [errore, setErrore] = useState(null);
   const [annoAperto, setAnnoAperto] = useState(null);
   const utente = JSON.parse(localStorage.getItem('utente') || 'null');
-  const puoCreare = utente?.ruolo === 'responsabile_servizio';
+  const puoCreare = haAccessoCompleto(utente);
 
   async function carica() {
-    const [ev, ref] = await Promise.all([api.getEventi(), api.getReferenti()]);
+    const [ev, ref, ut] = await Promise.all([api.getEventi(), api.getReferenti(), api.getUtenti().catch(() => [])]);
     setEventi(ev);
     setReferenti(ref);
+    setCapiServizio(ut.filter(u => u.attivo));
   }
 
   useEffect(() => { carica(); }, []);
@@ -34,6 +37,7 @@ export default function Eventi() {
         ...nuovoEvento,
         numero_ospiti: nuovoEvento.numero_ospiti ? Number(nuovoEvento.numero_ospiti) : null,
         referente_commerciale_id: nuovoEvento.referente_commerciale_id ? Number(nuovoEvento.referente_commerciale_id) : null,
+        capo_servizio_id: nuovoEvento.capo_servizio_id ? Number(nuovoEvento.capo_servizio_id) : null,
         ora_partenza_sede: nuovoEvento.ora_partenza_sede || null,
         ora_ritrovo_location: nuovoEvento.ora_ritrovo_location || null,
         ora_inizio: nuovoEvento.ora_inizio || null,
@@ -123,6 +127,12 @@ export default function Eventi() {
               </select>
             </div>
 
+            <select value={nuovoEvento.capo_servizio_id}
+              onChange={e => setNuovoEvento({ ...nuovoEvento, capo_servizio_id: e.target.value })}>
+              <option value="">Capo servizio (chi gestirà l'evento)...</option>
+              {capiServizio.map(u => <option key={u.id} value={u.id}>{u.nome} {u.cognome}</option>)}
+            </select>
+
             <textarea placeholder="Note (opzionale)" value={nuovoEvento.note}
               onChange={e => setNuovoEvento({ ...nuovoEvento, note: e.target.value })} rows={2} />
 
@@ -186,6 +196,7 @@ function CardEvento({ ev }) {
             <p style={{ margin: '4px 0', color: '#8B5E3C' }}>
               {new Date(ev.data_evento).toLocaleDateString('it-IT')} · {ev.luogo || 'luogo da definire'}
               {ev.referente_nome ? ` · Referente: ${ev.referente_nome} ${ev.referente_cognome}` : ' · Nessun referente assegnato'}
+              {ev.capo_servizio_nome ? ` · Capo servizio: ${ev.capo_servizio_nome} ${ev.capo_servizio_cognome}` : ''}
             </p>
           </div>
           <span className="badge da_contattare">{ev.stato}</span>

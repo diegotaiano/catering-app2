@@ -1,13 +1,13 @@
 import express from 'express';
 import { query } from '../db.js';
 import { richiediAuth } from '../middleware/auth.js';
-import { richiediRuolo } from '../middleware/ruoli.js';
+import { richiediRuolo, ACCESSO_COMPLETO } from '../middleware/ruoli.js';
 import { generaTokenRisposta, scadenzaDefault } from '../utils/token.js';
 import { inviaRichiestaDisponibilita, inviaListaSquadraAlReferente } from '../utils/email.js';
 
 const router = express.Router();
 router.use(richiediAuth);
-const soloResponsabile = richiediRuolo(['responsabile_servizio']);
+const soloResponsabile = richiediRuolo(ACCESSO_COMPLETO);
 
 // Crea una nuova squadra per un evento (es. "Sala", "Cucina")
 router.post('/', soloResponsabile, async (req, res) => {

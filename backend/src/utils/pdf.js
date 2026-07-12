@@ -47,7 +47,8 @@ export function generaPdfEvento(res, evento, squadre) {
     ['Inizio servizio', formattaOra(evento.ora_inizio) || '-'],
     ['Fine servizio', formattaOra(evento.ora_fine) || '-'],
     ['Numero ospiti', evento.numero_ospiti != null ? String(evento.numero_ospiti) : '-'],
-    ['Referente commerciale', evento.referente_nome ? `${evento.referente_nome} ${evento.referente_cognome}` : '-']
+    ['Referente commerciale', evento.referente_nome ? `${evento.referente_nome} ${evento.referente_cognome}` : '-'],
+    ['Capo servizio', evento.capo_servizio_nome ? `${evento.capo_servizio_nome} ${evento.capo_servizio_cognome}` : '-']
   ];
 
   doc.font('Helvetica').fontSize(11);

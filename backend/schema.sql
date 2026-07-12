@@ -123,3 +123,12 @@ CREATE INDEX IF NOT EXISTS idx_furgone_assegnazioni_evento ON furgone_assegnazio
 -- questi campi sono già nella CREATE TABLE eventi qui sopra e questa riga è un no-op.
 ALTER TABLE eventi ADD COLUMN IF NOT EXISTS ora_partenza_sede TIME;
 ALTER TABLE eventi ADD COLUMN IF NOT EXISTS ora_ritrovo_location TIME;
+
+-- Capo servizio: la persona assegnata a gestire QUESTO evento sul campo
+-- (distinto da responsabile_servizio_id, che e' semplicemente chi ha creato la scheda)
+ALTER TABLE eventi ADD COLUMN IF NOT EXISTS capo_servizio_id INTEGER REFERENCES utenti(id);
+
+-- Collega un utente con ruolo 'referente_commerciale' alla riga corrispondente
+-- in referenti_commerciali, cosi' il suo accesso si puo' filtrare sui soli eventi
+-- di cui e' il referente. Non utilizzato per gli altri ruoli.
+ALTER TABLE utenti ADD COLUMN IF NOT EXISTS referente_commerciale_id INTEGER REFERENCES referenti_commerciali(id);

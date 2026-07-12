@@ -1,11 +1,11 @@
 import express from 'express';
 import { query } from '../db.js';
 import { richiediAuth } from '../middleware/auth.js';
-import { richiediRuolo } from '../middleware/ruoli.js';
+import { richiediRuolo, ACCESSO_COMPLETO } from '../middleware/ruoli.js';
 
 const router = express.Router();
 router.use(richiediAuth);
-const soloResponsabile = richiediRuolo(['responsabile_servizio']);
+const soloResponsabile = richiediRuolo(ACCESSO_COMPLETO);
 
 // Anagrafica furgoni
 router.get('/', async (req, res) => {

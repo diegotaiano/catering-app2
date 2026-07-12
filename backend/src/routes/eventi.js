@@ -1,18 +1,23 @@
 import express from 'express';
 import { query } from '../db.js';
 import { richiediAuth } from '../middleware/auth.js';
-import { richiediRuolo } from '../middleware/ruoli.js';
+import { richiediRuolo, ACCESSO_COMPLETO, filtroEventiPerRuolo } from '../middleware/ruoli.js';
 
 const router = express.Router();
 router.use(richiediAuth);
 
-// Lista eventi (con filtro opzionale per data futura)
+// Lista eventi (filtrata in base al ruolo: alcuni vedono tutto, altri solo i propri)
 router.get('/', async (req, res) => {
+  const { clausola, valori } = filtroEventiPerRuolo(req.utente, 1);
   const { rows } = await query(
-    `SELECT e.*, r.nome AS referente_nome, r.cognome AS referente_cognome
+    `SELECT e.*, r.nome AS referente_nome, r.cognome AS referente_cognome,
+       cs.nome AS capo_servizio_nome, cs.cognome AS capo_servizio_cognome
      FROM eventi e
      LEFT JOIN referenti_commerciali r ON r.id = e.referente_commerciale_id
-     ORDER BY e.data_evento ASC`
+     LEFT JOIN utenti cs ON cs.id = e.capo_servizio_id
+     WHERE true ${clausola}
+     ORDER BY e.data_evento ASC`,
+    valori
   );
   res.json(rows);
 });
@@ -20,8 +25,26 @@ router.get('/', async (req, res) => {
 // Dettaglio evento + squadre + membri
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
-  const evento = await query('SELECT * FROM eventi WHERE id = $1', [id]);
+  const evento = await query(
+    `SELECT e.*, r.nome AS referente_nome, r.cognome AS referente_cognome,
+       cs.nome AS capo_servizio_nome, cs.cognome AS capo_servizio_cognome
+     FROM eventi e
+     LEFT JOIN referenti_commerciali r ON r.id = e.referente_commerciale_id
+     LEFT JOIN utenti cs ON cs.id = e.capo_servizio_id
+     WHERE e.id = $1`,
+    [id]
+  );
   if (!evento.rows[0]) return res.status(404).json({ errore: 'Evento non trovato' });
+
+  const ev = evento.rows[0];
+  const { ruolo } = req.utente;
+  const autorizzato =
+    ACCESSO_COMPLETO.includes(ruolo) ||
+    ['amministrazione', 'commerciale', 'capisquadra'].includes(ruolo) ||
+    (ruolo === 'referente_commerciale' && req.utente.referente_commerciale_id && ev.referente_commerciale_id === req.utente.referente_commerciale_id) ||
+    (ruolo === 'capo_servizio' && ev.capo_servizio_id === req.utente.id);
+
+  if (!autorizzato) return res.status(403).json({ errore: 'Non hai accesso a questo evento' });
 
   const squadre = await query(
     `SELECT sq.*,
@@ -47,23 +70,23 @@ router.get('/:id', async (req, res) => {
   res.json({ ...evento.rows[0], squadre: squadre.rows });
 });
 
-// Crea evento — solo responsabile di servizio
-router.post('/', richiediRuolo(['responsabile_servizio']), async (req, res) => {
-  const { nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, note } = req.body;
+// Crea evento — solo chi ha accesso completo
+router.post('/', richiediRuolo(ACCESSO_COMPLETO), async (req, res) => {
+  const { nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, capo_servizio_id, note } = req.body;
   if (!nome || !data_evento) return res.status(400).json({ errore: 'nome e data_evento richiesti' });
 
   const { rows } = await query(
-    `INSERT INTO eventi (nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, responsabile_servizio_id, note)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-    [nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, req.utente.id, note]
+    `INSERT INTO eventi (nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, capo_servizio_id, responsabile_servizio_id, note)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+    [nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, capo_servizio_id, req.utente.id, note]
   );
   res.status(201).json(rows[0]);
 });
 
-// Aggiorna evento — solo responsabile di servizio
-router.put('/:id', richiediRuolo(['responsabile_servizio']), async (req, res) => {
+// Aggiorna evento — solo chi ha accesso completo
+router.put('/:id', richiediRuolo(ACCESSO_COMPLETO), async (req, res) => {
   const { id } = req.params;
-  const campi = ['nome', 'brand', 'cliente', 'luogo', 'data_evento', 'ora_partenza_sede', 'ora_ritrovo_location', 'ora_inizio', 'ora_fine', 'numero_ospiti', 'referente_commerciale_id', 'stato', 'note'];
+  const campi = ['nome', 'brand', 'cliente', 'luogo', 'data_evento', 'ora_partenza_sede', 'ora_ritrovo_location', 'ora_inizio', 'ora_fine', 'numero_ospiti', 'referente_commerciale_id', 'capo_servizio_id', 'stato', 'note'];
   const set = [];
   const valori = [];
   campi.forEach((c, i) => {

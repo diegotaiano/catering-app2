@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../api.js';
+import { haAccessoCompleto } from '../ruoli.js';
 
 const ETICHETTE_STATO = {
   da_contattare: 'Da contattare',
@@ -12,10 +13,11 @@ const ETICHETTE_STATO = {
 export default function EventoDetail() {
   const { id } = useParams();
   const utente = JSON.parse(localStorage.getItem('utente') || 'null');
-  const puoModificare = utente?.ruolo === 'responsabile_servizio';
+  const puoModificare = haAccessoCompleto(utente);
   const [evento, setEvento] = useState(null);
   const [lavoratori, setLavoratori] = useState([]);
   const [referenti, setReferenti] = useState([]);
+  const [capiServizio, setCapiServizio] = useState([]);
   const [nuovaSquadra, setNuovaSquadra] = useState('');
   const [messaggio, setMessaggio] = useState(null);
   const [modificaAperta, setModificaAperta] = useState(false);
@@ -28,10 +30,13 @@ export default function EventoDetail() {
   }
 
   async function carica() {
-    const [ev, lav, ref] = await Promise.all([api.getEvento(id), api.getLavoratori(), api.getReferenti()]);
+    const [ev, lav, ref, ut] = await Promise.all([
+      api.getEvento(id), api.getLavoratori(), api.getReferenti(), api.getUtenti().catch(() => [])
+    ]);
     setEvento(ev);
     setLavoratori(lav);
     setReferenti(ref);
+    setCapiServizio(ut.filter(u => u.attivo));
     await caricaFurgoni(ev.data_evento);
     if (!modificaAperta) {
       setFormEvento({
@@ -40,7 +45,7 @@ export default function EventoDetail() {
         ora_partenza_sede: ev.ora_partenza_sede || '', ora_ritrovo_location: ev.ora_ritrovo_location || '',
         ora_inizio: ev.ora_inizio || '', ora_fine: ev.ora_fine || '',
         luogo: ev.luogo || '', numero_ospiti: ev.numero_ospiti || '',
-        referente_commerciale_id: ev.referente_commerciale_id || '', note: ev.note || ''
+        referente_commerciale_id: ev.referente_commerciale_id || '', capo_servizio_id: ev.capo_servizio_id || '', note: ev.note || ''
       });
     }
   }
@@ -53,6 +58,7 @@ export default function EventoDetail() {
       ...formEvento,
       numero_ospiti: formEvento.numero_ospiti ? Number(formEvento.numero_ospiti) : null,
       referente_commerciale_id: formEvento.referente_commerciale_id ? Number(formEvento.referente_commerciale_id) : null,
+      capo_servizio_id: formEvento.capo_servizio_id ? Number(formEvento.capo_servizio_id) : null,
       ora_partenza_sede: formEvento.ora_partenza_sede || null,
       ora_ritrovo_location: formEvento.ora_ritrovo_location || null,
       ora_inizio: formEvento.ora_inizio || null,
@@ -125,6 +131,7 @@ export default function EventoDetail() {
           <p style={{ color: '#8B5E3C', margin: 0 }}>
             {new Date(evento.data_evento).toLocaleDateString('it-IT')} · {evento.luogo || 'luogo da definire'} · {evento.numero_ospiti || '?'} ospiti
             {evento.referente_nome ? ` · Referente: ${evento.referente_nome} ${evento.referente_cognome}` : ' · Nessun referente assegnato'}
+            {evento.capo_servizio_nome ? ` · Capo servizio: ${evento.capo_servizio_nome} ${evento.capo_servizio_cognome}` : ''}
           </p>
         </div>
         <button className="secondary" onClick={handleScaricaPdf}>Scarica PDF scheda servizio</button>
@@ -187,6 +194,11 @@ export default function EventoDetail() {
                 {referenti.map(r => <option key={r.id} value={r.id}>{r.nome} {r.cognome}</option>)}
               </select>
             </div>
+            <select value={formEvento.capo_servizio_id}
+              onChange={e => setFormEvento({ ...formEvento, capo_servizio_id: e.target.value })}>
+              <option value="">Capo servizio (chi gestirà l'evento)...</option>
+              {capiServizio.map(u => <option key={u.id} value={u.id}>{u.nome} {u.cognome}</option>)}
+            </select>
             <textarea placeholder="Note (opzionale)" value={formEvento.note}
               onChange={e => setFormEvento({ ...formEvento, note: e.target.value })} rows={2} />
             <button type="submit">Salva modifiche</button>

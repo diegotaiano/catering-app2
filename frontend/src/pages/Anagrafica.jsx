@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
+import { haAccessoCompleto } from '../ruoli.js';
 
 const MANSIONI = ['cameriere', 'barista', 'cuoco', 'chef_di_rango', 'plonge', 'facchino', 'altro'];
 
 export default function Anagrafica() {
   const [scheda, setScheda] = useState('lavoratori');
   const utente = JSON.parse(localStorage.getItem('utente') || 'null');
-  const puoGestireUtenti = utente?.ruolo === 'responsabile_servizio';
+  const puoGestireUtenti = haAccessoCompleto(utente);
 
   return (
     <div className="container">
@@ -300,13 +301,16 @@ function SchedaFurgoni() {
 
 function SchedaUtenti() {
   const [lista, setLista] = useState([]);
+  const [referenti, setReferenti] = useState([]);
   const [mostraForm, setMostraForm] = useState(false);
   const [errore, setErrore] = useState(null);
-  const [form, setForm] = useState({ nome: '', cognome: '', email: '', password: '', ruolo: 'capisquadra' });
+  const [form, setForm] = useState({ nome: '', cognome: '', email: '', password: '', ruolo: 'capo_servizio', referente_commerciale_id: '' });
   const utenteCorrente = JSON.parse(localStorage.getItem('utente') || 'null');
 
   async function carica() {
-    setLista(await api.getUtenti());
+    const [u, r] = await Promise.all([api.getUtenti(), api.getReferenti()]);
+    setLista(u);
+    setReferenti(r);
   }
   useEffect(() => { carica(); }, []);
 
@@ -314,8 +318,11 @@ function SchedaUtenti() {
     e.preventDefault();
     setErrore(null);
     try {
-      await api.creaUtente(form);
-      setForm({ nome: '', cognome: '', email: '', password: '', ruolo: 'capisquadra' });
+      await api.creaUtente({
+        ...form,
+        referente_commerciale_id: form.ruolo === 'referente_commerciale' && form.referente_commerciale_id ? Number(form.referente_commerciale_id) : null
+      });
+      setForm({ nome: '', cognome: '', email: '', password: '', ruolo: 'capo_servizio', referente_commerciale_id: '' });
       setMostraForm(false);
       carica();
     } catch (err) {
@@ -324,7 +331,12 @@ function SchedaUtenti() {
   }
 
   async function cambiaRuolo(u, nuovoRuolo) {
-    await api.aggiornaUtente(u.id, { ruolo: nuovoRuolo });
+    await api.aggiornaUtente(u.id, { ruolo: nuovoRuolo, referente_commerciale_id: nuovoRuolo === 'referente_commerciale' ? u.referente_commerciale_id : null });
+    carica();
+  }
+
+  async function cambiaReferenteCollegato(u, referenteId) {
+    await api.aggiornaUtente(u.id, { referente_commerciale_id: referenteId ? Number(referenteId) : null });
     carica();
   }
 
@@ -340,11 +352,21 @@ function SchedaUtenti() {
     carica();
   }
 
+  const ETICHETTE_RUOLO = {
+    hr_manager: 'HR Manager (pieno accesso)',
+    responsabile_servizio: 'Responsabile di servizio (pieno accesso)',
+    amministrazione: 'Amministrazione (legge tutti gli eventi)',
+    commerciale: 'Commerciale (legge tutti gli eventi)',
+    referente_commerciale: 'Referente commerciale (solo i propri eventi)',
+    capo_servizio: 'Capo servizio (solo eventi assegnati)'
+  };
+
   return (
     <div>
       <p style={{ color: '#8B5E3C', fontSize: 13, marginBottom: 12 }}>
-        <strong>Responsabile di servizio</strong>: può creare e modificare eventi.{' '}
-        <strong>Capisquadra</strong>: può consultare eventi, squadre e furgoni ma non crearne o modificarne.
+        <strong>HR Manager</strong>: pieno accesso. <strong>Amministrazione/Commerciale</strong>: leggono tutti gli eventi.{' '}
+        <strong>Referente commerciale</strong>: legge solo gli eventi di cui è il referente.{' '}
+        <strong>Capo servizio</strong>: legge solo gli eventi a cui è assegnato.
       </p>
       <div className="row" style={{ marginBottom: 12 }}>
         <p style={{ margin: 0, color: '#8B5E3C' }}>{lista.length} utenti</p>
@@ -362,9 +384,18 @@ function SchedaUtenti() {
             <input type="email" placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
             <input type="password" placeholder="Password iniziale" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required />
             <select value={form.ruolo} onChange={e => setForm({ ...form, ruolo: e.target.value })}>
-              <option value="capisquadra">Capisquadra (sola lettura)</option>
-              <option value="responsabile_servizio">Responsabile di servizio (pieno accesso)</option>
+              <option value="hr_manager">HR Manager (pieno accesso)</option>
+              <option value="amministrazione">Amministrazione (legge tutti gli eventi)</option>
+              <option value="commerciale">Commerciale (legge tutti gli eventi)</option>
+              <option value="referente_commerciale">Referente commerciale (solo i propri eventi)</option>
+              <option value="capo_servizio">Capo servizio (solo eventi assegnati)</option>
             </select>
+            {form.ruolo === 'referente_commerciale' && (
+              <select value={form.referente_commerciale_id} onChange={e => setForm({ ...form, referente_commerciale_id: e.target.value })} required>
+                <option value="">Collega al referente...</option>
+                {referenti.map(r => <option key={r.id} value={r.id}>{r.nome} {r.cognome}</option>)}
+              </select>
+            )}
             {errore && <p style={{ color: '#a33' }}>{errore}</p>}
             <button type="submit">Crea utente</button>
           </form>
@@ -374,13 +405,20 @@ function SchedaUtenti() {
       {lista.map(u => (
         <div key={u.id} className="card" style={{ opacity: u.attivo ? 1 : 0.5 }}>
           <div className="row">
-            <div>
+            <div style={{ flex: 1 }}>
               <strong>{u.nome} {u.cognome}</strong> {u.id === utenteCorrente?.id && <span style={{ fontSize: 12, color: '#8B5E3C' }}>(tu)</span>}
               <p style={{ margin: '4px 0', color: '#8B5E3C' }}>{u.email}</p>
-              <select value={u.ruolo} onChange={e => cambiaRuolo(u, e.target.value)} style={{ marginBottom: 0, width: 260 }}>
-                <option value="capisquadra">Capisquadra (sola lettura)</option>
-                <option value="responsabile_servizio">Responsabile di servizio (pieno accesso)</option>
+              <select value={u.ruolo} onChange={e => cambiaRuolo(u, e.target.value)} style={{ marginBottom: 6 }}>
+                {Object.entries(ETICHETTE_RUOLO).filter(([v]) => v !== 'responsabile_servizio').map(([v, label]) => (
+                  <option key={v} value={v}>{label}</option>
+                ))}
               </select>
+              {u.ruolo === 'referente_commerciale' && (
+                <select value={u.referente_commerciale_id || ''} onChange={e => cambiaReferenteCollegato(u, e.target.value)} style={{ marginBottom: 0 }}>
+                  <option value="">Collega al referente...</option>
+                  {referenti.map(r => <option key={r.id} value={r.id}>{r.nome} {r.cognome}</option>)}
+                </select>
+              )}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               {u.attivo

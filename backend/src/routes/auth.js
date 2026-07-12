@@ -19,7 +19,7 @@ router.post('/login', async (req, res) => {
   if (!passwordOk) return res.status(401).json({ errore: 'Credenziali non valide' });
 
   const token = jwt.sign(
-    { id: utente.id, email: utente.email, ruolo: utente.ruolo, nome: utente.nome },
+    { id: utente.id, email: utente.email, ruolo: utente.ruolo, nome: utente.nome, referente_commerciale_id: utente.referente_commerciale_id },
     process.env.JWT_SECRET,
     { expiresIn: '30d' }
   );

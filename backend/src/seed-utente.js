@@ -1,18 +1,21 @@
 // Uso: node src/seed-utente.js "Nome" "Cognome" "email@esempio.it" "password123" [ruolo]
-// ruolo: responsabile_servizio (default, puo' creare/modificare eventi) oppure capisquadra (sola lettura)
+// ruoli disponibili: hr_manager (pieno accesso), amministrazione, commerciale (leggono tutto),
+// referente_commerciale (solo i propri eventi), capo_servizio (solo eventi assegnati)
 import bcrypt from 'bcryptjs';
 import { pool, query } from './db.js';
 
+const RUOLI_VALIDI = ['hr_manager', 'responsabile_servizio', 'amministrazione', 'commerciale', 'referente_commerciale', 'capo_servizio'];
+
 const [nome, cognome, email, password, ruoloInput] = process.argv.slice(2);
-const ruolo = ruoloInput || 'responsabile_servizio';
+const ruolo = ruoloInput || 'hr_manager';
 
 if (!nome || !cognome || !email || !password) {
-  console.error('Uso: node src/seed-utente.js "Nome" "Cognome" "email@esempio.it" "password" [responsabile_servizio|capisquadra]');
+  console.error(`Uso: node src/seed-utente.js "Nome" "Cognome" "email@esempio.it" "password" [${RUOLI_VALIDI.join('|')}]`);
   process.exit(1);
 }
 
-if (!['responsabile_servizio', 'capisquadra'].includes(ruolo)) {
-  console.error('Ruolo non valido. Usa "responsabile_servizio" oppure "capisquadra".');
+if (!RUOLI_VALIDI.includes(ruolo)) {
+  console.error(`Ruolo non valido. Usa uno tra: ${RUOLI_VALIDI.join(', ')}`);
   process.exit(1);
 }
 
