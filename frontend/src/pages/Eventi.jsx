@@ -15,6 +15,7 @@ export default function Eventi() {
   const [capiServizio, setCapiServizio] = useState([]);
   const [mostraForm, setMostraForm] = useState(false);
   const [nuovoEvento, setNuovoEvento] = useState(VUOTO);
+  const [fileSelezionati, setFileSelezionati] = useState([]);
   const [errore, setErrore] = useState(null);
   const [annoAperto, setAnnoAperto] = useState(null);
   const utente = JSON.parse(localStorage.getItem('utente') || 'null');
@@ -43,9 +44,17 @@ export default function Eventi() {
         ora_inizio: nuovoEvento.ora_inizio || null,
         ora_fine: nuovoEvento.ora_fine || null
       };
-      await api.creaEvento(dati);
+      const nuovo = await api.creaEvento(dati);
+      if (fileSelezionati.length > 0) {
+        try {
+          await api.caricaAllegati(nuovo.id, fileSelezionati);
+        } catch (errUpload) {
+          setErrore(`Evento creato, ma il caricamento degli allegati è fallito: ${errUpload.message}`);
+        }
+      }
       setMostraForm(false);
       setNuovoEvento(VUOTO);
+      setFileSelezionati([]);
       carica();
     } catch (err) {
       setErrore(err.message);
@@ -149,6 +158,11 @@ export default function Eventi() {
 
             <textarea placeholder="Note (opzionale)" value={nuovoEvento.note}
               onChange={e => setNuovoEvento({ ...nuovoEvento, note: e.target.value })} rows={2} />
+
+            <label style={{ fontSize: 13, color: '#8B5E3C' }}>
+              Allegati (moduli, planimetrie, menu — opzionale)
+            </label>
+            <input type="file" multiple onChange={e => setFileSelezionati(Array.from(e.target.files || []))} />
 
             {errore && <p style={{ color: '#a33' }}>{errore}</p>}
             <button type="submit">Crea evento</button>

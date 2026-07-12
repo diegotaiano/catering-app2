@@ -31,6 +31,36 @@ export const api = {
   getEventiCestino: () => request('/eventi/cestino'),
   ripristinaEvento: (id) => request(`/eventi/${id}/ripristina`, { method: 'POST' }),
   eliminaDefinitivamente: (id) => request(`/eventi/${id}/definitivo`, { method: 'DELETE' }),
+  getAllegati: (eventoId) => request(`/eventi/${eventoId}/allegati`),
+  caricaAllegati: async (eventoId, files) => {
+    const formData = new FormData();
+    for (const file of files) formData.append('file', file);
+    const res = await fetch(`${API_URL}/eventi/${eventoId}/allegati`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${getToken()}` },
+      body: formData
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data?.errore || 'Errore nel caricamento');
+    return data;
+  },
+  eliminaAllegato: (eventoId, allegatoId) => request(`/eventi/${eventoId}/allegati/${allegatoId}`, { method: 'DELETE' }),
+  scaricaAllegato: async (eventoId, allegatoId, nomeFile) => {
+    const res = await fetch(`${API_URL}/eventi/${eventoId}/allegati/${allegatoId}`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    if (!res.ok) throw new Error('Impossibile scaricare il file');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.download = nomeFile || 'allegato';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
   getLavoratori: () => request('/lavoratori'),
   creaLavoratore: (dati) => request('/lavoratori', { method: 'POST', body: dati }),
   aggiornaLavoratore: (id, dati) => request(`/lavoratori/${id}`, { method: 'PUT', body: dati }),

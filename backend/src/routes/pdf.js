@@ -48,7 +48,17 @@ router.get('/:id/pdf', async (req, res) => {
     [id]
   );
 
-  generaPdfEvento(res, evento, squadreRes.rows);
+  const allegatiRes = await query(
+    `SELECT nome_file, tipo_mime, contenuto FROM evento_allegati WHERE evento_id = $1 ORDER BY caricato_il`,
+    [id]
+  );
+
+  try {
+    await generaPdfEvento(res, evento, squadreRes.rows, allegatiRes.rows);
+  } catch (err) {
+    console.error('Errore generazione PDF:', err);
+    if (!res.headersSent) res.status(500).json({ errore: 'Errore nella generazione del PDF' });
+  }
 });
 
 export default router;

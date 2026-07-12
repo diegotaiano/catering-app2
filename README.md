@@ -27,6 +27,12 @@ I nuovi utenti si creano direttamente dall'app, in Anagrafica → "Utenti app" (
 
 Eliminare un evento non lo cancella subito: lo sposta in un cestino (visibile solo a chi ha accesso completo, link "Cestino" in alto), da cui può essere ripristinato in qualsiasi momento oppure eliminato in modo definitivo e irreversibile.
 
+## Allegati
+
+Nella scheda di ogni evento (e già in fase di creazione) si possono caricare file — moduli, planimetrie, menu, ecc. Solo chi ha accesso completo può caricarli o eliminarli; tutti i ruoli che vedono l'evento possono scaricarli. I file sono salvati direttamente nel database (non serve configurare uno storage esterno), quindi sono adatti a documenti e immagini di dimensione ragionevole (limite 15MB per file).
+
+Il PDF "scheda servizio" incorpora automaticamente immagini e PDF allegati come pagine aggiuntive; altri formati (es. Word, Excel) restano elencati per nome e scaricabili singolarmente dall'app.
+
 ## Setup Database (Neon o altro Postgres)
 
 1. Crea un progetto su [neon.tech](https://neon.tech) (o riusa quello esistente, creando

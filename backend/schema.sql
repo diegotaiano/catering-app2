@@ -137,3 +137,19 @@ ALTER TABLE utenti ADD COLUMN IF NOT EXISTS referente_commerciale_id INTEGER REF
 -- NULL = evento attivo, valorizzato = eliminato (recuperabile) in quel momento.
 ALTER TABLE eventi ADD COLUMN IF NOT EXISTS eliminato_il TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_eventi_eliminato ON eventi(eliminato_il);
+
+-- Allegati evento (moduli, planimetrie, menu, ecc.). Il contenuto è salvato
+-- direttamente nel database (bytea): niente storage esterno da configurare.
+-- Adatto a file di dimensione ragionevole (documenti, immagini); non pensato
+-- per file molto grandi.
+CREATE TABLE IF NOT EXISTS evento_allegati (
+  id SERIAL PRIMARY KEY,
+  evento_id INTEGER NOT NULL REFERENCES eventi(id) ON DELETE CASCADE,
+  nome_file VARCHAR(255) NOT NULL,
+  tipo_mime VARCHAR(100),
+  dimensione_byte INTEGER,
+  contenuto BYTEA NOT NULL,
+  caricato_da INTEGER REFERENCES utenti(id),
+  caricato_il TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_evento_allegati_evento ON evento_allegati(evento_id);
