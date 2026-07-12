@@ -112,3 +112,13 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--oro-chiaro);
 }
 .top-bar button:hover { background: var(--oro); color: var(--nero); border-color: var(--oro); }
+
+@media (max-width: 600px) {
+  .container { padding: 14px; }
+  .card { padding: 16px; }
+  .row { flex-wrap: wrap; }
+  .top-bar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+  .top-bar a { font-size: 17px; }
+  h1 { font-size: 22px; }
+  h3 { font-size: 17px; }
+}
