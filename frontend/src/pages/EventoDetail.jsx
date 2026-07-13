@@ -10,12 +10,6 @@ const ETICHETTE_STATO = {
   non_disponibile: 'Non disponibile'
 };
 
-function formattaDimensione(byte) {
-  if (!byte) return '0 KB';
-  if (byte < 1024 * 1024) return `${Math.round(byte / 1024)} KB`;
-  return `${(byte / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 export default function EventoDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,8 +19,6 @@ export default function EventoDetail() {
   const [lavoratori, setLavoratori] = useState([]);
   const [referenti, setReferenti] = useState([]);
   const [capiServizio, setCapiServizio] = useState([]);
-  const [allegati, setAllegati] = useState([]);
-  const [caricandoAllegati, setCaricandoAllegati] = useState(false);
   const [messaggio, setMessaggio] = useState(null);
   const [modificaAperta, setModificaAperta] = useState(false);
   const [formEvento, setFormEvento] = useState(null);
@@ -45,7 +37,6 @@ export default function EventoDetail() {
     setLavoratori(lav);
     setReferenti(ref);
     setCapiServizio(ut.filter(u => u.attivo));
-    setAllegati(await api.getAllegati(id));
     await caricaFurgoni(ev.data_evento);
     if (!modificaAperta) {
       setFormEvento({
@@ -120,35 +111,6 @@ export default function EventoDetail() {
     } catch (err) {
       setMessaggio(`Errore: ${err.message}`);
     }
-  }
-
-  async function handleCaricaAllegati(e) {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    setCaricandoAllegati(true);
-    try {
-      await api.caricaAllegati(id, files);
-      setAllegati(await api.getAllegati(id));
-    } catch (err) {
-      setMessaggio(`Errore: ${err.message}`);
-    } finally {
-      setCaricandoAllegati(false);
-      e.target.value = '';
-    }
-  }
-
-  async function handleScaricaAllegato(allegato) {
-    try {
-      await api.scaricaAllegato(id, allegato.id, allegato.nome_file);
-    } catch (err) {
-      setMessaggio(`Errore: ${err.message}`);
-    }
-  }
-
-  async function handleEliminaAllegato(allegato) {
-    if (!confirm(`Eliminare l'allegato "${allegato.nome_file}"?`)) return;
-    await api.eliminaAllegato(id, allegato.id);
-    setAllegati(await api.getAllegati(id));
   }
 
   async function handleEliminaEvento() {
@@ -256,29 +218,17 @@ export default function EventoDetail() {
       {messaggio && <div className="card" style={{ background: '#fdf1d6' }}>{messaggio}</div>}
 
       <div className="card">
-        <h3>Allegati</h3>
-        <p style={{ fontSize: 13, color: '#8B5E3C', marginTop: -8 }}>
-          Moduli, planimetrie, menu, ecc. Le immagini e i PDF vengono incorporati anche nel PDF scaricabile della scheda servizio.
-        </p>
-
-        {allegati.map(a => (
-          <div key={a.id} className="row" style={{ padding: '6px 0', borderBottom: '1px solid #eee' }}>
-            <span onClick={() => handleScaricaAllegato(a)} style={{ cursor: 'pointer', color: 'var(--oro-scuro)' }}>
-              {a.nome_file} <span style={{ color: '#999', fontSize: 12 }}>({formattaDimensione(a.dimensione_byte)})</span>
-            </span>
-            {puoModificare && (
-              <button className="danger" onClick={() => handleEliminaAllegato(a)}>Elimina</button>
-            )}
+        <div className="row">
+          <div>
+            <h3 style={{ margin: 0 }}>Allegati</h3>
+            <p style={{ margin: '4px 0', fontSize: 13, color: '#8B5E3C' }}>
+              Moduli, planimetrie, menu, ecc.
+            </p>
           </div>
-        ))}
-        {allegati.length === 0 && <p style={{ color: '#8B5E3C', fontSize: 13 }}>Nessun allegato caricato.</p>}
-
-        {puoModificare && (
-          <div style={{ marginTop: 12 }}>
-            <input type="file" multiple onChange={handleCaricaAllegati} disabled={caricandoAllegati} />
-            {caricandoAllegati && <p style={{ fontSize: 13, color: '#8B5E3C' }}>Caricamento in corso...</p>}
-          </div>
-        )}
+          <button className="secondary" onClick={() => navigate(`/eventi/${id}/allegati`)}>
+            Vai agli allegati
+          </button>
+        </div>
       </div>
 
       <div className="card">

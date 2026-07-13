@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import Login from './pages/Login.jsx';
 import Eventi from './pages/Eventi.jsx';
 import EventoDetail from './pages/EventoDetail.jsx';
+import AllegatiEvento from './pages/AllegatiEvento.jsx';
 import Anagrafica from './pages/Anagrafica.jsx';
 import Cestino from './pages/Cestino.jsx';
 import RispostaDisponibilita from './pages/RispostaDisponibilita.jsx';
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="/disponibilita/:token" element={<RispostaDisponibilita />} />
         <Route path="/eventi" element={<RottaProtetta><Eventi /></RottaProtetta>} />
         <Route path="/eventi/:id" element={<RottaProtetta><EventoDetail /></RottaProtetta>} />
+        <Route path="/eventi/:id/allegati" element={<RottaProtetta><AllegatiEvento /></RottaProtetta>} />
         <Route path="/anagrafica" element={<RottaProtetta><Anagrafica /></RottaProtetta>} />
         <Route path="/cestino" element={<RottaProtetta><Cestino /></RottaProtetta>} />
         <Route path="*" element={<Navigate to="/eventi" replace />} />
