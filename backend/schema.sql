@@ -49,6 +49,9 @@ CREATE TABLE IF NOT EXISTS eventi (
   ora_inizio TIME,                       -- orario inizio servizio
   ora_fine TIME,                         -- orario fine servizio
   numero_ospiti INTEGER,
+  numero_ospiti_adulti INTEGER,
+  numero_bambini INTEGER,
+  numero_staff INTEGER,
   referente_commerciale_id INTEGER REFERENCES referenti_commerciali(id),
   responsabile_servizio_id INTEGER REFERENCES utenti(id),
   stato VARCHAR(30) NOT NULL DEFAULT 'in_organizzazione', -- in_organizzazione | confermato | concluso | annullato
@@ -132,6 +135,12 @@ ALTER TABLE eventi ADD COLUMN IF NOT EXISTS capo_servizio_id INTEGER REFERENCES 
 -- in referenti_commerciali, cosi' il suo accesso si puo' filtrare sui soli eventi
 -- di cui e' il referente. Non utilizzato per gli altri ruoli.
 ALTER TABLE utenti ADD COLUMN IF NOT EXISTS referente_commerciale_id INTEGER REFERENCES referenti_commerciali(id);
+
+-- Numero ospiti diviso per fascia (adulti/bambini) e personale non-catering presente.
+-- numero_ospiti resta per compatibilità con dati storici ma non è più popolato dai form.
+ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_ospiti_adulti INTEGER;
+ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_bambini INTEGER;
+ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_staff INTEGER;
 
 -- Cestino: gli eventi eliminati non vengono cancellati subito, solo marcati.
 -- NULL = evento attivo, valorizzato = eliminato (recuperabile) in quel momento.

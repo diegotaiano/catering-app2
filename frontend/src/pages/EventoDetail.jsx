@@ -57,7 +57,7 @@ export default function EventoDetail() {
         data_evento: ev.data_evento?.slice(0, 10) || '',
         ora_partenza_sede: ev.ora_partenza_sede || '', ora_ritrovo_location: ev.ora_ritrovo_location || '',
         ora_inizio: ev.ora_inizio || '', ora_fine: ev.ora_fine || '',
-        luogo: ev.luogo || '', numero_ospiti: ev.numero_ospiti || '',
+        luogo: ev.luogo || '', numero_ospiti_adulti: ev.numero_ospiti_adulti || '', numero_bambini: ev.numero_bambini || '', numero_staff: ev.numero_staff || '',
         referente_commerciale_id: ev.referente_commerciale_id || '', capo_servizio_id: ev.capo_servizio_id || '', note: ev.note || ''
       });
     }
@@ -69,7 +69,9 @@ export default function EventoDetail() {
     e.preventDefault();
     await api.aggiornaEvento(id, {
       ...formEvento,
-      numero_ospiti: formEvento.numero_ospiti ? Number(formEvento.numero_ospiti) : null,
+      numero_ospiti_adulti: formEvento.numero_ospiti_adulti ? Number(formEvento.numero_ospiti_adulti) : null,
+      numero_bambini: formEvento.numero_bambini ? Number(formEvento.numero_bambini) : null,
+      numero_staff: formEvento.numero_staff ? Number(formEvento.numero_staff) : null,
       referente_commerciale_id: formEvento.referente_commerciale_id ? Number(formEvento.referente_commerciale_id) : null,
       capo_servizio_id: formEvento.capo_servizio_id ? Number(formEvento.capo_servizio_id) : null,
       ora_partenza_sede: formEvento.ora_partenza_sede || null,
@@ -144,7 +146,7 @@ export default function EventoDetail() {
         <div>
           <h1 style={{ marginBottom: 4 }}>{evento.nome}</h1>
           <p style={{ color: '#8B5E3C', margin: 0 }}>
-            {new Date(evento.data_evento).toLocaleDateString('it-IT')} · {evento.luogo || 'luogo da definire'} · {evento.numero_ospiti || '?'} ospiti
+            {new Date(evento.data_evento).toLocaleDateString('it-IT')} · {evento.luogo || 'luogo da definire'} · {evento.numero_ospiti_adulti || 0} adulti, {evento.numero_bambini || 0} bambini, {evento.numero_staff || 0} staff
             {evento.referente_nome ? ` · Referente: ${evento.referente_nome} ${evento.referente_cognome}` : ' · Nessun referente assegnato'}
           </p>
           <div style={{ marginTop: 8 }}>
@@ -207,9 +209,16 @@ export default function EventoDetail() {
             </div>
             <input placeholder="Luogo" value={formEvento.luogo}
               onChange={e => setFormEvento({ ...formEvento, luogo: e.target.value })} />
+            <label style={{ fontSize: 13, color: '#8B5E3C' }}>Numero presenti</label>
             <div className="row">
-              <input type="number" placeholder="Numero ospiti" value={formEvento.numero_ospiti}
-                onChange={e => setFormEvento({ ...formEvento, numero_ospiti: e.target.value })} />
+              <input type="number" min="0" placeholder="Ospiti adulti" value={formEvento.numero_ospiti_adulti}
+                onChange={e => setFormEvento({ ...formEvento, numero_ospiti_adulti: e.target.value })} />
+              <input type="number" min="0" placeholder="Bambini" value={formEvento.numero_bambini}
+                onChange={e => setFormEvento({ ...formEvento, numero_bambini: e.target.value })} />
+              <input type="number" min="0" placeholder="Staff" value={formEvento.numero_staff}
+                onChange={e => setFormEvento({ ...formEvento, numero_staff: e.target.value })} />
+            </div>
+            <div className="row">
               <select value={formEvento.referente_commerciale_id}
                 onChange={e => setFormEvento({ ...formEvento, referente_commerciale_id: e.target.value })}>
                 <option value="">Referente commerciale...</option>

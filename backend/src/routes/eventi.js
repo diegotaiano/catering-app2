@@ -97,15 +97,15 @@ router.get('/:id', async (req, res) => {
 
 // Crea evento — solo chi ha accesso completo
 router.post('/', richiediRuolo(ACCESSO_COMPLETO), async (req, res) => {
-  const { nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, capo_servizio_id, note } = req.body;
+  const { nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti_adulti, numero_bambini, numero_staff, referente_commerciale_id, capo_servizio_id, note } = req.body;
   if (!nome || !data_evento) return res.status(400).json({ errore: 'nome e data_evento richiesti' });
   if (!referente_commerciale_id) return res.status(400).json({ errore: 'Il referente commerciale è obbligatorio' });
   if (!capo_servizio_id) return res.status(400).json({ errore: 'Il capo servizio è obbligatorio' });
 
   const { rows } = await query(
-    `INSERT INTO eventi (nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, capo_servizio_id, responsabile_servizio_id, note)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
-    [nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti, referente_commerciale_id, capo_servizio_id, req.utente.id, note]
+    `INSERT INTO eventi (nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti_adulti, numero_bambini, numero_staff, referente_commerciale_id, capo_servizio_id, responsabile_servizio_id, note)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+    [nome, brand, cliente, luogo, data_evento, ora_partenza_sede, ora_ritrovo_location, ora_inizio, ora_fine, numero_ospiti_adulti, numero_bambini, numero_staff, referente_commerciale_id, capo_servizio_id, req.utente.id, note]
   );
 
   // Ogni evento ha una lista personale unica, creata automaticamente (non serve più il passaggio manuale "crea squadra")
@@ -120,7 +120,7 @@ router.post('/', richiediRuolo(ACCESSO_COMPLETO), async (req, res) => {
 // Aggiorna evento — solo chi ha accesso completo
 router.put('/:id', richiediRuolo(ACCESSO_COMPLETO), async (req, res) => {
   const { id } = req.params;
-  const campi = ['nome', 'brand', 'cliente', 'luogo', 'data_evento', 'ora_partenza_sede', 'ora_ritrovo_location', 'ora_inizio', 'ora_fine', 'numero_ospiti', 'referente_commerciale_id', 'capo_servizio_id', 'stato', 'note'];
+  const campi = ['nome', 'brand', 'cliente', 'luogo', 'data_evento', 'ora_partenza_sede', 'ora_ritrovo_location', 'ora_inizio', 'ora_fine', 'numero_ospiti_adulti', 'numero_bambini', 'numero_staff', 'referente_commerciale_id', 'capo_servizio_id', 'stato', 'note'];
   const set = [];
   const valori = [];
   campi.forEach((c, i) => {

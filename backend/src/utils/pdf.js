@@ -46,7 +46,9 @@ function costruisciCopertina(evento, squadre, allegati, furgoni) {
       ['Ritrovo in location', formattaOra(evento.ora_ritrovo_location) || '-'],
       ['Inizio servizio', formattaOra(evento.ora_inizio) || '-'],
       ['Fine servizio', formattaOra(evento.ora_fine) || '-'],
-      ['Numero ospiti', evento.numero_ospiti != null ? String(evento.numero_ospiti) : '-'],
+      ['Ospiti adulti', evento.numero_ospiti_adulti != null ? String(evento.numero_ospiti_adulti) : '-'],
+      ['Bambini', evento.numero_bambini != null ? String(evento.numero_bambini) : '-'],
+      ['Staff', evento.numero_staff != null ? String(evento.numero_staff) : '-'],
       ['Referente commerciale', evento.referente_nome ? `${evento.referente_nome} ${evento.referente_cognome}` : '-'],
       ['Capo servizio', evento.capo_servizio_nome ? `${evento.capo_servizio_nome} ${evento.capo_servizio_cognome}` : '-']
     ];

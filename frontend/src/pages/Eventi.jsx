@@ -6,7 +6,7 @@ import { haAccessoCompleto } from '../ruoli.js';
 const VUOTO = {
   nome: '', brand: 'Lanzarotti1967', cliente: '', data_evento: '',
   ora_partenza_sede: '', ora_ritrovo_location: '', ora_inizio: '', ora_fine: '',
-  luogo: '', numero_ospiti: '', referente_commerciale_id: '', capo_servizio_id: '', note: ''
+  luogo: '', numero_ospiti_adulti: '', numero_bambini: '', numero_staff: '', referente_commerciale_id: '', capo_servizio_id: '', note: ''
 };
 
 export default function Eventi() {
@@ -36,7 +36,9 @@ export default function Eventi() {
     try {
       const dati = {
         ...nuovoEvento,
-        numero_ospiti: nuovoEvento.numero_ospiti ? Number(nuovoEvento.numero_ospiti) : null,
+        numero_ospiti_adulti: nuovoEvento.numero_ospiti_adulti ? Number(nuovoEvento.numero_ospiti_adulti) : null,
+        numero_bambini: nuovoEvento.numero_bambini ? Number(nuovoEvento.numero_bambini) : null,
+        numero_staff: nuovoEvento.numero_staff ? Number(nuovoEvento.numero_staff) : null,
         referente_commerciale_id: nuovoEvento.referente_commerciale_id ? Number(nuovoEvento.referente_commerciale_id) : null,
         capo_servizio_id: nuovoEvento.capo_servizio_id ? Number(nuovoEvento.capo_servizio_id) : null,
         ora_partenza_sede: nuovoEvento.ora_partenza_sede || null,
@@ -141,9 +143,17 @@ export default function Eventi() {
             <input placeholder="Luogo" value={nuovoEvento.luogo}
               onChange={e => setNuovoEvento({ ...nuovoEvento, luogo: e.target.value })} />
 
+            <label style={{ fontSize: 13, color: '#8B5E3C' }}>Numero presenti</label>
             <div className="row">
-              <input type="number" placeholder="Numero ospiti" value={nuovoEvento.numero_ospiti}
-                onChange={e => setNuovoEvento({ ...nuovoEvento, numero_ospiti: e.target.value })} />
+              <input type="number" min="0" placeholder="Ospiti adulti" value={nuovoEvento.numero_ospiti_adulti}
+                onChange={e => setNuovoEvento({ ...nuovoEvento, numero_ospiti_adulti: e.target.value })} />
+              <input type="number" min="0" placeholder="Bambini" value={nuovoEvento.numero_bambini}
+                onChange={e => setNuovoEvento({ ...nuovoEvento, numero_bambini: e.target.value })} />
+              <input type="number" min="0" placeholder="Staff" value={nuovoEvento.numero_staff}
+                onChange={e => setNuovoEvento({ ...nuovoEvento, numero_staff: e.target.value })} />
+            </div>
+
+            <div className="row">
               <select value={nuovoEvento.referente_commerciale_id} required
                 onChange={e => setNuovoEvento({ ...nuovoEvento, referente_commerciale_id: e.target.value })}>
                 <option value="">Referente commerciale... *</option>
