@@ -189,7 +189,12 @@ export async function generaPdfEvento(res, evento, squadre, allegati = [], furgo
   const bufferCopertina = await costruisciCopertina(evento, squadre, allegati, furgoni);
   const bufferFinale = await fondiAllegati(bufferCopertina, allegati);
 
+  const nomeFile = (evento.nome || 'scheda-servizio')
+    .replace(/[\\/:*?"<>|]/g, '')
+    .trim()
+    .slice(0, 150) || `scheda-servizio-${evento.id}`;
+
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="scheda-servizio-${evento.id}.pdf"`);
+  res.setHeader('Content-Disposition', `attachment; filename="${nomeFile}.pdf"`);
   res.send(bufferFinale);
 }

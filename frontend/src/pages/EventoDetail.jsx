@@ -122,7 +122,7 @@ export default function EventoDetail() {
 
   async function handleScaricaPdf() {
     try {
-      await api.scaricaPdfEvento(id);
+      await api.scaricaPdfEvento(id, evento.nome);
     } catch (err) {
       setMessaggio(`Errore: ${err.message}`);
     }
