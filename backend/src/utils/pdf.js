@@ -12,6 +12,24 @@ const ETICHETTE_STATO = {
   non_disponibile: 'Non disponibile'
 };
 
+// Ordine di visualizzazione richiesto per il personale nel PDF.
+// Chi ha una mansione non elencata qui finisce in fondo, ordinato per cognome.
+const PRIORITA_MANSIONE = ['Chef', 'Sbarazzo', 'Capo servizio', 'Cameriere'];
+
+function indicePriorita(membro) {
+  const effettiva = (membro.ruolo_specifico || membro.mansione || '').trim().toLowerCase();
+  const idx = PRIORITA_MANSIONE.findIndex(p => p.toLowerCase() === effettiva);
+  return idx === -1 ? PRIORITA_MANSIONE.length : idx;
+}
+
+function ordinaMembriPerRuolo(membri) {
+  return [...(membri || [])].sort((a, b) => {
+    const diff = indicePriorita(a) - indicePriorita(b);
+    if (diff !== 0) return diff;
+    return (a.cognome || '').localeCompare(b.cognome || '');
+  });
+}
+
 function formattaData(d) {
   return new Date(d).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
 }
@@ -74,7 +92,7 @@ function costruisciCopertina(evento, squadre, allegati, furgoni) {
         doc.font('Helvetica').fontSize(10).fillColor(GRIGIO).text('Nessun membro assegnato', 60, y);
         y += 18;
       } else {
-        squadra.membri.forEach((m) => {
+        ordinaMembriPerRuolo(squadra.membri).forEach((m) => {
           if (y > doc.page.height - 80) { doc.addPage(); y = 50; }
           const ruolo = m.ruolo_specifico || m.mansione || '';
           doc.font('Helvetica').fontSize(11).fillColor(NERO)
