@@ -1,16 +1,18 @@
 import express from 'express';
 import { query } from '../db.js';
 import { richiediAuth } from '../middleware/auth.js';
+import { richiediRuolo, ACCESSO_COMPLETO } from '../middleware/ruoli.js';
 
 const router = express.Router();
 router.use(richiediAuth);
+const soloResponsabile = richiediRuolo(ACCESSO_COMPLETO);
 
 router.get('/', async (req, res) => {
   const { rows } = await query('SELECT * FROM lavoratori WHERE attivo = true ORDER BY cognome, nome');
   res.json(rows);
 });
 
-router.post('/', async (req, res) => {
+router.post('/', soloResponsabile, async (req, res) => {
   const { nome, cognome, email, telefono, mansione, note } = req.body;
   if (!nome || !cognome || !email) return res.status(400).json({ errore: 'nome, cognome, email richiesti' });
 
@@ -21,7 +23,7 @@ router.post('/', async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', soloResponsabile, async (req, res) => {
   const { id } = req.params;
   const { nome, cognome, email, telefono, mansione, note } = req.body;
   const { rows } = await query(
@@ -33,7 +35,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Disattivazione soft-delete: non elimina fisicamente per non rompere lo storico squadre passate
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', soloResponsabile, async (req, res) => {
   await query('UPDATE lavoratori SET attivo = false WHERE id = $1', [req.params.id]);
   res.status(204).send();
 });

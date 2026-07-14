@@ -43,6 +43,8 @@ function SchedaLavoratori() {
   const [lista, setLista] = useState([]);
   const [inModifica, setInModifica] = useState(null); // null = nessuno, 'nuovo' = form vuoto, id = modifica
   const [form, setForm] = useState(vuotoLavoratore());
+  const utente = JSON.parse(localStorage.getItem('utente') || 'null');
+  const puoModificare = haAccessoCompleto(utente);
 
   function vuotoLavoratore() {
     return { nome: '', cognome: '', email: '', telefono: '', mansione: 'Cameriere', note: '' };
@@ -83,10 +85,10 @@ function SchedaLavoratori() {
     <div>
       <div className="row" style={{ marginBottom: 12 }}>
         <p style={{ margin: 0, color: '#8B5E3C' }}>{lista.length} lavoratori attivi</p>
-        <button onClick={avviaNuovo}>+ Nuovo lavoratore</button>
+        {puoModificare && <button onClick={avviaNuovo}>+ Nuovo lavoratore</button>}
       </div>
 
-      {inModifica !== null && (
+      {inModifica !== null && puoModificare && (
         <div className="card">
           <h3>{inModifica === 'nuovo' ? 'Nuovo lavoratore' : 'Modifica lavoratore'}</h3>
           <form onSubmit={salva}>
@@ -117,8 +119,12 @@ function SchedaLavoratori() {
               <span className="badge da_contattare">{l.mansione}</span>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="secondary" onClick={() => avviaModifica(l)}>Modifica</button>
-              <button className="danger" onClick={() => disattiva(l.id)}>Disattiva</button>
+              {puoModificare && (
+                <>
+                  <button className="secondary" onClick={() => avviaModifica(l)}>Modifica</button>
+                  <button className="danger" onClick={() => disattiva(l.id)}>Disattiva</button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -134,6 +140,8 @@ function SchedaReferenti() {
   const [lista, setLista] = useState([]);
   const [inModifica, setInModifica] = useState(null);
   const [form, setForm] = useState(vuotoReferente());
+  const utente = JSON.parse(localStorage.getItem('utente') || 'null');
+  const puoModificare = haAccessoCompleto(utente);
 
   function vuotoReferente() {
     return { nome: '', cognome: '', email: '' };
@@ -174,10 +182,10 @@ function SchedaReferenti() {
     <div>
       <div className="row" style={{ marginBottom: 12 }}>
         <p style={{ margin: 0, color: '#8B5E3C' }}>{lista.length} referenti attivi</p>
-        <button onClick={avviaNuovo}>+ Nuovo referente</button>
+        {puoModificare && <button onClick={avviaNuovo}>+ Nuovo referente</button>}
       </div>
 
-      {inModifica !== null && (
+      {inModifica !== null && puoModificare && (
         <div className="card">
           <h3>{inModifica === 'nuovo' ? 'Nuovo referente commerciale' : 'Modifica referente'}</h3>
           <form onSubmit={salva}>
@@ -202,8 +210,12 @@ function SchedaReferenti() {
               <p style={{ margin: '4px 0', color: '#8B5E3C' }}>{r.email}</p>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="secondary" onClick={() => avviaModifica(r)}>Modifica</button>
-              <button className="danger" onClick={() => disattiva(r.id)}>Disattiva</button>
+              {puoModificare && (
+                <>
+                  <button className="secondary" onClick={() => avviaModifica(r)}>Modifica</button>
+                  <button className="danger" onClick={() => disattiva(r.id)}>Disattiva</button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -219,6 +231,8 @@ function SchedaFurgoni() {
   const [lista, setLista] = useState([]);
   const [inModifica, setInModifica] = useState(null);
   const [form, setForm] = useState(vuotoFurgone());
+  const utente = JSON.parse(localStorage.getItem('utente') || 'null');
+  const puoModificare = haAccessoCompleto(utente);
 
   function vuotoFurgone() {
     return { nome: '', targa: '', note: '' };
@@ -259,10 +273,10 @@ function SchedaFurgoni() {
     <div>
       <div className="row" style={{ marginBottom: 12 }}>
         <p style={{ margin: 0, color: '#8B5E3C' }}>{lista.length} furgoni attivi</p>
-        <button onClick={avviaNuovo}>+ Nuovo furgone</button>
+        {puoModificare && <button onClick={avviaNuovo}>+ Nuovo furgone</button>}
       </div>
 
-      {inModifica !== null && (
+      {inModifica !== null && puoModificare && (
         <div className="card">
           <h3>{inModifica === 'nuovo' ? 'Nuovo furgone' : 'Modifica furgone'}</h3>
           <form onSubmit={salva}>
@@ -286,8 +300,12 @@ function SchedaFurgoni() {
               <p style={{ margin: '4px 0', color: '#8B5E3C' }}>{f.targa || 'targa non inserita'}</p>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="secondary" onClick={() => avviaModifica(f)}>Modifica</button>
-              <button className="danger" onClick={() => disattiva(f.id)}>Disattiva</button>
+              {puoModificare && (
+                <>
+                  <button className="secondary" onClick={() => avviaModifica(f)}>Modifica</button>
+                  <button className="danger" onClick={() => disattiva(f.id)}>Disattiva</button>
+                </>
+              )}
             </div>
           </div>
         </div>
