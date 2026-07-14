@@ -93,8 +93,20 @@ router.delete('/assegnazioni/:id', soloResponsabile, async (req, res) => {
   res.status(204).send();
 });
 
-// Assegnazioni furgoni per un evento specifico
+// Assegnazioni furgoni per un evento specifico (solo se l'utente può vedere quell'evento)
 router.get('/evento/:eventoId', async (req, res) => {
+  const eventoRes = await query('SELECT * FROM eventi WHERE id = $1', [req.params.eventoId]);
+  const evento = eventoRes.rows[0];
+  if (!evento) return res.status(404).json({ errore: 'Evento non trovato' });
+
+  const { ruolo } = req.utente;
+  const autorizzato =
+    ACCESSO_COMPLETO.includes(ruolo) ||
+    ['amministrazione', 'commerciale', 'capisquadra'].includes(ruolo) ||
+    (ruolo === 'referente_commerciale' && req.utente.referente_commerciale_id && evento.referente_commerciale_id === req.utente.referente_commerciale_id) ||
+    (ruolo === 'capo_servizio' && evento.capo_servizio_id === req.utente.id);
+  if (!autorizzato) return res.status(403).json({ errore: 'Non hai accesso a questo evento' });
+
   const { rows } = await query(
     `SELECT fa.id AS assegnazione_id, f.id AS furgone_id, f.nome, f.targa
      FROM furgone_assegnazioni fa JOIN furgoni f ON f.id = fa.furgone_id

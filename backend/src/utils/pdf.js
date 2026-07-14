@@ -22,7 +22,7 @@ function formattaOra(t) {
 
 // Costruisce solo la copertina (info + squadra) con pdfkit, restituendola come Buffer
 // invece di scriverla direttamente sulla risposta HTTP.
-function costruisciCopertina(evento, squadre, allegati) {
+function costruisciCopertina(evento, squadre, allegati, furgoni) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     const chunks = [];
@@ -86,6 +86,19 @@ function costruisciCopertina(evento, squadre, allegati) {
       }
       y += 15;
     });
+
+    if (furgoni && furgoni.length > 0) {
+      if (y > doc.page.height - 100) { doc.addPage(); y = 50; }
+      doc.font('Helvetica-Bold').fontSize(13).fillColor(NERO).text('FURGONI ASSEGNATI', 50, y);
+      y += 22;
+      furgoni.forEach((f) => {
+        if (y > doc.page.height - 60) { doc.addPage(); y = 50; }
+        doc.font('Helvetica').fontSize(11).fillColor(NERO)
+          .text(`• ${f.nome}${f.targa ? `  (${f.targa})` : ''}`, 60, y);
+        y += 18;
+      });
+      y += 15;
+    }
 
     if (allegati && allegati.length > 0) {
       if (y > doc.page.height - 140) { doc.addPage(); y = 50; }
@@ -152,8 +165,8 @@ async function fondiAllegati(bufferCopertina, allegati) {
 }
 
 // Genera il PDF completo (copertina + squadra + allegati incorporati) e lo scrive su res.
-export async function generaPdfEvento(res, evento, squadre, allegati = []) {
-  const bufferCopertina = await costruisciCopertina(evento, squadre, allegati);
+export async function generaPdfEvento(res, evento, squadre, allegati = [], furgoni = []) {
+  const bufferCopertina = await costruisciCopertina(evento, squadre, allegati, furgoni);
   const bufferFinale = await fondiAllegati(bufferCopertina, allegati);
 
   res.setHeader('Content-Type', 'application/pdf');

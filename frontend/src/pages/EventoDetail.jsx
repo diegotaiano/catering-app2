@@ -25,8 +25,21 @@ export default function EventoDetail() {
   const [furgoni, setFurgoni] = useState([]);
 
   async function caricaFurgoni(dataEvento) {
-    const data = dataEvento.slice(0, 10);
-    setFurgoni(await api.getDisponibilitaFurgoni(data));
+    if (puoModificare) {
+      const data = dataEvento.slice(0, 10);
+      setFurgoni(await api.getDisponibilitaFurgoni(data));
+    } else {
+      // Ruoli in sola lettura: niente dati sull'intera flotta o su altri eventi,
+      // solo i furgoni effettivamente assegnati a questo evento.
+      const assegnati = await api.getFurgoniEvento(id);
+      setFurgoni(assegnati.map(a => ({
+        id: a.furgone_id,
+        nome: a.nome,
+        targa: a.targa,
+        assegnazione_id: a.assegnazione_id,
+        occupato_evento_id: Number(id)
+      })));
+    }
   }
 
   async function carica() {
@@ -233,7 +246,7 @@ export default function EventoDetail() {
 
       <div className="card">
         <h3>Furgoni per il {new Date(evento.data_evento).toLocaleDateString('it-IT')}</h3>
-        {furgoni.map(f => {
+        {(puoModificare ? furgoni : furgoni.filter(f => f.occupato_evento_id === Number(id))).map(f => {
           const assegnatoAQuestoEvento = f.occupato_evento_id === Number(id);
           const occupatoDaAltri = f.occupato_evento_id && !assegnatoAQuestoEvento;
           return (
@@ -245,7 +258,7 @@ export default function EventoDetail() {
                   {puoModificare && <button className="danger" onClick={() => handleRimuoviFurgone(f.assegnazione_id)}>Rimuovi</button>}
                 </div>
               )}
-              {occupatoDaAltri && (
+              {puoModificare && occupatoDaAltri && (
                 <span className="badge non_disponibile">Occupato su "{f.occupato_evento_nome}"</span>
               )}
               {!f.occupato_evento_id && puoModificare && (
@@ -254,8 +267,11 @@ export default function EventoDetail() {
             </div>
           );
         })}
-        {furgoni.length === 0 && (
+        {puoModificare && furgoni.length === 0 && (
           <p>Nessun furgone in anagrafica. Aggiungili in <a href="/anagrafica">Anagrafica</a>.</p>
+        )}
+        {!puoModificare && furgoni.filter(f => f.occupato_evento_id === Number(id)).length === 0 && (
+          <p style={{ color: '#8B5E3C', fontSize: 13 }}>Nessun furgone assegnato a questo evento.</p>
         )}
       </div>
 

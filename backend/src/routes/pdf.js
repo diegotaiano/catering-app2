@@ -53,8 +53,15 @@ router.get('/:id/pdf', async (req, res) => {
     [id]
   );
 
+  const furgoniRes = await query(
+    `SELECT f.nome, f.targa
+     FROM furgone_assegnazioni fa JOIN furgoni f ON f.id = fa.furgone_id
+     WHERE fa.evento_id = $1 ORDER BY f.nome`,
+    [id]
+  );
+
   try {
-    await generaPdfEvento(res, evento, squadreRes.rows, allegatiRes.rows);
+    await generaPdfEvento(res, evento, squadreRes.rows, allegatiRes.rows, furgoniRes.rows);
   } catch (err) {
     console.error('Errore generazione PDF:', err);
     if (!res.headersSent) res.status(500).json({ errore: 'Errore nella generazione del PDF' });
