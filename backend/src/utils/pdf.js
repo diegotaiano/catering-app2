@@ -13,13 +13,21 @@ const ETICHETTE_STATO = {
 };
 
 // Ordine di visualizzazione richiesto per il personale nel PDF.
-// Chi ha una mansione non elencata qui finisce in fondo, ordinato per cognome.
-const PRIORITA_MANSIONE = ['Chef', 'Aiuto Cucina', 'Sbarazzo', 'Capo servizio', 'Cameriere'];
+// Riconoscimento per parola chiave (non testo esatto), per tollerare varianti
+// di scrittura (es. "Sbarazzatore", "Aiuto cuoco", maiuscole/minuscole diverse).
+// Chi non rientra in nessuna di queste finisce in fondo, ordinato per cognome.
+const REGOLE_PRIORITA = [
+  { chiave: 'chef', peso: 0 },
+  { chiave: 'aiuto', peso: 1 },
+  { chiave: 'sbarazz', peso: 2 },
+  { chiave: 'capo serv', peso: 3 },
+  { chiave: 'cameriere', peso: 4 }
+];
 
 function indicePriorita(membro) {
   const effettiva = (membro.ruolo_specifico || membro.mansione || '').trim().toLowerCase();
-  const idx = PRIORITA_MANSIONE.findIndex(p => p.toLowerCase() === effettiva);
-  return idx === -1 ? PRIORITA_MANSIONE.length : idx;
+  const regola = REGOLE_PRIORITA.find(r => effettiva.includes(r.chiave));
+  return regola ? regola.peso : REGOLE_PRIORITA.length;
 }
 
 function ordinaMembriPerRuolo(membri) {
@@ -98,9 +106,12 @@ function costruisciCopertina(evento, squadre, allegati, furgoni) {
           doc.font('Helvetica').fontSize(11).fillColor(NERO)
             .text(`${m.nome} ${m.cognome}`, 60, y, { continued: true, width: 250 })
             .fillColor(GRIGIO).text(ruolo ? `  —  ${ruolo}` : '', { continued: true });
+          const etichettaStato = m.stato_disponibilita === 'da_contattare'
+            ? ''
+            : `   ${ETICHETTE_STATO[m.stato_disponibilita] || m.stato_disponibilita}`;
           doc.fillColor(m.stato_disponibilita === 'disponibile' ? '#2f5c33' : GRIGIO)
             .font('Helvetica-Bold').fontSize(9)
-            .text(`   ${ETICHETTE_STATO[m.stato_disponibilita] || m.stato_disponibilita}`, { continued: false });
+            .text(etichettaStato, { continued: false });
           y += 18;
         });
       }
