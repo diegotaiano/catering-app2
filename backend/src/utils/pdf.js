@@ -14,7 +14,7 @@ const ETICHETTE_STATO = {
 
 // Ordine di visualizzazione richiesto per il personale nel PDF.
 // Chi ha una mansione non elencata qui finisce in fondo, ordinato per cognome.
-const PRIORITA_MANSIONE = ['Chef', 'Sbarazzo', 'Capo servizio', 'Cameriere'];
+const PRIORITA_MANSIONE = ['Chef', 'Aiuto Cucina', 'Sbarazzo', 'Capo servizio', 'Cameriere'];
 
 function indicePriorita(membro) {
   const effettiva = (membro.ruolo_specifico || membro.mansione || '').trim().toLowerCase();
