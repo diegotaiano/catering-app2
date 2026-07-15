@@ -89,6 +89,14 @@ export default function EventoDetail() {
     carica();
   }
 
+  async function handleAggiungiMembriMultipli(squadraId, idsLavoratori) {
+    if (!idsLavoratori || idsLavoratori.length === 0) return;
+    for (const idLavoratore of idsLavoratori) {
+      await api.aggiungiMembro(squadraId, Number(idLavoratore), null);
+    }
+    carica();
+  }
+
   async function handleInviaRichieste(squadraId) {
     const res = await api.inviaRichieste(squadraId);
     setMessaggio(`Inviate ${res.inviate} richieste di disponibilità.`);
@@ -291,6 +299,7 @@ export default function EventoDetail() {
           lavoratori={lavoratori}
           puoModificare={puoModificare}
           onAggiungiMembro={handleAggiungiMembro}
+          onAggiungiMembriMultipli={handleAggiungiMembriMultipli}
           onInviaRichieste={handleInviaRichieste}
           onConfermaEInvia={handleConfermaEInvia}
           onRimuovi={async (membroId) => { await api.rimuoviMembro(membroId); carica(); }}
@@ -300,12 +309,24 @@ export default function EventoDetail() {
   );
 }
 
-function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onInviaRichieste, onConfermaEInvia, onRimuovi }) {
-  const [lavoratoreId, setLavoratoreId] = useState('');
-  const [ruolo, setRuolo] = useState('');
+function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onAggiungiMembriMultipli, onInviaRichieste, onConfermaEInvia, onRimuovi }) {
+  const [selezionati, setSelezionati] = useState([]);
 
   const tuttiDisponibili = squadra.membri.length > 0 && squadra.membri.every(m => m.stato_disponibilita === 'disponibile');
   const cePersoneDaContattare = squadra.membri.some(m => m.stato_disponibilita === 'da_contattare');
+
+  // Chi è già in squadra non compare più tra le opzioni selezionabili
+  const idsGiaAggiunti = new Set(squadra.membri.map(m => m.lavoratore_id));
+  const lavoratoriDisponibili = lavoratori.filter(l => !idsGiaAggiunti.has(l.id));
+
+  function toggleSelezione(id) {
+    setSelezionati(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+
+  async function confermaAggiunta() {
+    await onAggiungiMembriMultipli(squadra.id, selezionati);
+    setSelezionati([]);
+  }
 
   return (
     <div className="card">
@@ -326,15 +347,29 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onI
 
       {puoModificare && (
         <>
-          <div className="row" style={{ marginTop: 12 }}>
-            <select value={lavoratoreId} onChange={e => setLavoratoreId(e.target.value)} style={{ marginBottom: 0 }}>
-              <option value="">Aggiungi lavoratore...</option>
-              {lavoratori.map(l => <option key={l.id} value={l.id}>{l.nome} {l.cognome} ({l.mansione})</option>)}
-            </select>
-            <input placeholder="Mansione per questo evento (es. Capo sala, Runner)" value={ruolo} onChange={e => setRuolo(e.target.value)} style={{ marginBottom: 0 }} />
-            <button onClick={() => { onAggiungiMembro(squadra.id, lavoratoreId, ruolo); setLavoratoreId(''); setRuolo(''); }}>
-              Aggiungi
-            </button>
+          <div style={{ marginTop: 12 }}>
+            <p style={{ fontSize: 13, color: '#8B5E3C', marginBottom: 6 }}>
+              Seleziona uno o più lavoratori da aggiungere:
+            </p>
+            <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #eee', borderRadius: 4, padding: 8 }}>
+              {lavoratoriDisponibili.map(l => (
+                <label key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={selezionati.includes(l.id)} onChange={() => toggleSelezione(l.id)} style={{ width: 'auto', marginBottom: 0 }} />
+                  <span>{l.nome} {l.cognome} <em style={{ color: '#999' }}>({l.mansione})</em></span>
+                </label>
+              ))}
+              {lavoratoriDisponibili.length === 0 && (
+                <p style={{ fontSize: 13, color: '#8B5E3C', margin: 0 }}>Tutti i lavoratori disponibili sono già stati aggiunti.</p>
+              )}
+            </div>
+            <div className="row" style={{ marginTop: 10 }}>
+              <span style={{ fontSize: 13, color: '#8B5E3C' }}>
+                {selezionati.length} selezionat{selezionati.length === 1 ? 'o' : 'i'}
+              </span>
+              <button disabled={selezionati.length === 0} onClick={confermaAggiunta}>
+                Aggiungi selezionati
+              </button>
+            </div>
           </div>
 
           <div className="row" style={{ marginTop: 12 }}>
