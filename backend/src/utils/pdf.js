@@ -87,7 +87,11 @@ function costruisciCopertina(evento, squadre, allegati, furgoni) {
     doc.font('Helvetica').fontSize(11);
     righe.forEach(([etichetta, valore]) => {
       doc.fillColor(GRIGIO).text(etichetta, 50, y, { width: 160, continued: false });
-      doc.fillColor(NERO).text(valore, 220, y);
+      if (etichetta === 'Luogo' && evento.luogo_url) {
+        doc.fillColor(ORO).text(valore, 220, y, { link: evento.luogo_url, underline: true });
+      } else {
+        doc.fillColor(NERO).text(valore, 220, y);
+      }
       y += 20;
     });
 

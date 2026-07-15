@@ -143,6 +143,10 @@ ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_ospiti_adulti INTEGER;
 ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_bambini INTEGER;
 ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_staff INTEGER;
 
+-- Link a Google Maps per il luogo dell'evento (generato dal suggerimento indirizzo
+-- in fase di creazione/modifica). Il campo "luogo" resta il solo nome breve (es. "Villa Montalbano").
+ALTER TABLE eventi ADD COLUMN IF NOT EXISTS luogo_url VARCHAR(500);
+
 -- Etichetta libera di gruppo esterno (es. "Gruppo Aemme"), assegnabile a un
 -- membro squadra per un singolo evento. Non è un'anagrafica: si scrive a mano ogni volta.
 ALTER TABLE squadra_membri ADD COLUMN IF NOT EXISTS gruppo VARCHAR(100);

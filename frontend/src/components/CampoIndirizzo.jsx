@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 
 // Campo di testo con suggerimenti di indirizzo mentre si digita (tipo Google Maps),
 // usando il servizio gratuito di ricerca di OpenStreetMap (Nominatim). Nessuna chiave
-// API richiesta.
-export default function CampoIndirizzo({ value, onChange, placeholder }) {
+// API richiesta. Alla selezione restituisce il nome breve del luogo (es. "Villa Montalbano")
+// e un link a Google Maps per quel punto, tramite onChange(nomeBreve, urlMappa).
+export default function CampoIndirizzo({ value, onChange, placeholder, linkAttuale }) {
   const [suggerimenti, setSuggerimenti] = useState([]);
   const [mostraLista, setMostraLista] = useState(false);
   const [caricando, setCaricando] = useState(false);
@@ -22,7 +23,7 @@ export default function CampoIndirizzo({ value, onChange, placeholder }) {
 
   function handleChange(e) {
     const testo = e.target.value;
-    onChange(testo);
+    onChange(testo, null);
 
     clearTimeout(timerRef.current);
     if (testo.trim().length < 3) {
@@ -49,7 +50,9 @@ export default function CampoIndirizzo({ value, onChange, placeholder }) {
   }
 
   function scegliSuggerimento(s) {
-    onChange(s.display_name);
+    const nomeBreve = s.display_name.split(',')[0].trim();
+    const urlMappa = `https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}`;
+    onChange(nomeBreve, urlMappa);
     setSuggerimenti([]);
     setMostraLista(false);
   }
@@ -81,6 +84,11 @@ export default function CampoIndirizzo({ value, onChange, placeholder }) {
             </div>
           ))}
         </div>
+      )}
+      {linkAttuale && (
+        <p style={{ fontSize: 12, color: 'var(--oro-scuro)', margin: '4px 0 0' }}>
+          📍 Link mappa collegato — <a href={linkAttuale} target="_blank" rel="noreferrer" style={{ color: 'var(--oro-scuro)' }}>apri su Google Maps</a>
+        </p>
       )}
     </div>
   );

@@ -64,7 +64,7 @@ export default function EventoDetail() {
         data_evento: ev.data_evento?.slice(0, 10) || '',
         ora_partenza_sede: ev.ora_partenza_sede || '', ora_ritrovo_location: ev.ora_ritrovo_location || '',
         ora_inizio: ev.ora_inizio || '', ora_fine: ev.ora_fine || '',
-        luogo: ev.luogo || '', numero_ospiti_adulti: ev.numero_ospiti_adulti || '', numero_bambini: ev.numero_bambini || '', numero_staff: ev.numero_staff || '',
+        luogo: ev.luogo || '', luogo_url: ev.luogo_url || '', numero_ospiti_adulti: ev.numero_ospiti_adulti || '', numero_bambini: ev.numero_bambini || '', numero_staff: ev.numero_staff || '',
         referente_commerciale_id: ev.referente_commerciale_id || '', capo_servizio_id: ev.capo_servizio_id || '', note: ev.note || ''
       });
     }
@@ -215,7 +215,9 @@ export default function EventoDetail() {
         <div>
           <h1 style={{ marginBottom: 4 }}>{evento.nome}</h1>
           <p style={{ color: '#8B5E3C', margin: 0 }}>
-            {new Date(evento.data_evento).toLocaleDateString('it-IT')} · {evento.luogo || 'luogo da definire'} · {evento.numero_ospiti_adulti || 0} adulti, {evento.numero_bambini || 0} bambini, {evento.numero_staff || 0} staff
+            {new Date(evento.data_evento).toLocaleDateString('it-IT')} · {evento.luogo_url ? (
+              <a href={evento.luogo_url} target="_blank" rel="noreferrer" style={{ color: 'var(--oro-scuro)' }}>{evento.luogo}</a>
+            ) : (evento.luogo || 'luogo da definire')} · {evento.numero_ospiti_adulti || 0} adulti, {evento.numero_bambini || 0} bambini, {evento.numero_staff || 0} staff
             {evento.referente_nome ? ` · Referente: ${evento.referente_nome} ${evento.referente_cognome}` : ' · Nessun referente assegnato'}
           </p>
           <div style={{ marginTop: 8 }}>
@@ -276,8 +278,8 @@ export default function EventoDetail() {
                   onChange={e => setFormEvento({ ...formEvento, ora_fine: e.target.value })} />
               </div>
             </div>
-            <CampoIndirizzo value={formEvento.luogo}
-              onChange={val => setFormEvento({ ...formEvento, luogo: val })} />
+            <CampoIndirizzo value={formEvento.luogo} linkAttuale={formEvento.luogo_url}
+              onChange={(val, url) => setFormEvento({ ...formEvento, luogo: val, luogo_url: url })} />
             <label style={{ fontSize: 13, color: '#8B5E3C' }}>Numero presenti</label>
             <div className="row">
               <input type="number" min="0" placeholder="Ospiti adulti" value={formEvento.numero_ospiti_adulti}
