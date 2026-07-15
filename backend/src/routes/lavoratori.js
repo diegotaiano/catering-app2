@@ -12,6 +12,32 @@ router.get('/', async (req, res) => {
   res.json(rows);
 });
 
+// Disponibilità dei lavoratori per una data specifica: mostra chi è già assegnato
+// a un altro evento nello stesso giorno (stessa logica di /furgoni/disponibilita/:data).
+router.get('/disponibilita/:data', async (req, res) => {
+  const { data } = req.params;
+  const { rows } = await query(
+    `SELECT l.*,
+       oc.evento_id AS occupato_evento_id, oc.evento_nome AS occupato_evento_nome
+     FROM lavoratori l
+     LEFT JOIN LATERAL (
+       SELECT e.id AS evento_id, e.nome AS evento_nome
+       FROM squadra_membri sm
+       JOIN squadre sq ON sq.id = sm.squadra_id
+       JOIN eventi e ON e.id = sq.evento_id
+       WHERE sm.lavoratore_id = l.id
+         AND sm.stato_disponibilita <> 'non_disponibile'
+         AND e.data_evento = $1::date
+         AND e.eliminato_il IS NULL
+       LIMIT 1
+     ) oc ON true
+     WHERE l.attivo = true
+     ORDER BY l.cognome, l.nome`,
+    [data]
+  );
+  res.json(rows);
+});
+
 router.post('/', soloResponsabile, async (req, res) => {
   const { nome, cognome, email, telefono, mansione, gruppo, note } = req.body;
   if (!nome || !cognome) return res.status(400).json({ errore: 'nome e cognome richiesti' });

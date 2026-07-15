@@ -110,6 +110,7 @@ export const api = {
   eliminaRichiestaGruppo: (eventoId, richiestaId) => request(`/eventi/${eventoId}/gruppi/${richiestaId}`, { method: 'DELETE' }),
   getSuggerimentiGruppi: () => request('/lavoratori/gruppi/suggerimenti'),
   getPersoneGruppo: (nomeGruppo) => request(`/lavoratori/gruppi/${encodeURIComponent(nomeGruppo)}/persone`),
+  getDisponibilitaLavoratori: (data) => request(`/lavoratori/disponibilita/${data}`),
   richiediDisponibilitaSettimana: (inizio) => request('/settimana/richiedi-disponibilita', { method: 'POST', body: { inizio } }),
   // Pubbliche (magic link) — risposta gruppi esterni
   getRichiestaGruppo: (token) => request(`/gruppo-risposta/${token}`, { auth: false }),

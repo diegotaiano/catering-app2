@@ -45,11 +45,12 @@ export default function EventoDetail() {
   }
 
   async function carica() {
-    const [ev, lav, ref, ut, gruppi, suggGruppi] = await Promise.all([
-      api.getEvento(id), api.getLavoratori(), api.getReferenti(), api.getUtenti().catch(() => []),
+    const [ev, ref, ut, gruppi, suggGruppi] = await Promise.all([
+      api.getEvento(id), api.getReferenti(), api.getUtenti().catch(() => []),
       api.getGruppiEvento(id).catch(() => []), api.getSuggerimentiGruppi().catch(() => [])
     ]);
     setEvento(ev);
+    const lav = await api.getDisponibilitaLavoratori(ev.data_evento.slice(0, 10));
     setLavoratori(lav);
     setReferenti(ref);
     setCapiServizio(ut.filter(u => u.attivo));
@@ -502,12 +503,21 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
               Seleziona uno o più lavoratori da aggiungere:
             </p>
             <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #eee', borderRadius: 4, padding: 8 }}>
-              {lavoratoriDisponibili.map(l => (
-                <label key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={selezionati.includes(l.id)} onChange={() => toggleSelezione(l.id)} style={{ width: 'auto', marginBottom: 0 }} />
-                  <span>{l.nome} {l.cognome} <em style={{ color: '#999' }}>({l.mansione})</em></span>
-                </label>
-              ))}
+              {lavoratoriDisponibili.map(l => {
+                const occupato = Boolean(l.occupato_evento_id);
+                return (
+                  <label key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: occupato ? 'not-allowed' : 'pointer', opacity: occupato ? 0.6 : 1 }}>
+                    <input type="checkbox" checked={selezionati.includes(l.id)} disabled={occupato}
+                      onChange={() => toggleSelezione(l.id)} style={{ width: 'auto', marginBottom: 0 }} />
+                    <span>{l.nome} {l.cognome} <em style={{ color: '#999' }}>({l.mansione})</em></span>
+                    {occupato && (
+                      <span className="badge non_disponibile" style={{ fontSize: 11 }}>
+                        Occupato su "{l.occupato_evento_nome}"
+                      </span>
+                    )}
+                  </label>
+                );
+              })}
               {lavoratoriDisponibili.length === 0 && (
                 <p style={{ fontSize: 13, color: '#8B5E3C', margin: 0 }}>Tutti i lavoratori disponibili sono già stati aggiunti.</p>
               )}
