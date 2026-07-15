@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { PDFDocument as PDFLibDocument } from 'pdf-lib';
+import { convertiInPdf, eConvertibile } from './conversionePdf.js';
 
 const NERO = '#232021';
 const ORO = '#B5A349';
@@ -155,7 +156,7 @@ function costruisciCopertina(evento, squadre, allegati, furgoni) {
       doc.font('Helvetica-Bold').fontSize(13).fillColor(NERO).text('ALLEGATI', 50, y);
       y += 20;
       doc.font('Helvetica').fontSize(10).fillColor(GRIGIO)
-        .text('Le immagini e i PDF allegati sono incorporati nelle pagine successive. Altri formati restano scaricabili dall\'app.', 50, y, { width: doc.page.width - 100 });
+        .text('Immagini, PDF, Word, Excel e PowerPoint allegati sono incorporati nelle pagine successive. Altri formati restano scaricabili dall\'app.', 50, y, { width: doc.page.width - 100 });
       y += 24;
       allegati.forEach((a) => {
         if (y > doc.page.height - 60) { doc.addPage(); y = 50; }
@@ -202,6 +203,17 @@ async function fondiAllegati(bufferCopertina, allegati) {
           width: larghezza,
           height: altezza
         });
+      } else if (eConvertibile(mime)) {
+        // Word, Excel, PowerPoint: convertiamo in PDF al volo (Adobe PDF Services)
+        // e incorporiamo il risultato come per un PDF normale.
+        const pdfConvertito = await convertiInPdf(allegato.contenuto, mime);
+        if (pdfConvertito) {
+          const docAllegato = await PDFLibDocument.load(pdfConvertito, { ignoreEncryption: true });
+          const pagine = await docFinale.copyPages(docAllegato, docAllegato.getPageIndices());
+          pagine.forEach((pagina) => docFinale.addPage(pagina));
+        }
+        // Se la conversione fallisce (o le credenziali non sono configurate),
+        // l'allegato resta comunque elencato in copertina e scaricabile dall'app.
       }
       // Altri formati (docx, xlsx, ecc.) non vengono incorporati visivamente:
       // restano elencati per nome nella copertina e scaricabili singolarmente dall'app.

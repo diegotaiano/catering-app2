@@ -17,6 +17,7 @@
     "resend": "^3.4.0",
     "pdfkit": "^0.15.0",
     "multer": "^1.4.5-lts.1",
-    "pdf-lib": "^1.17.1"
+    "pdf-lib": "^1.17.1",
+    "@adobe/pdfservices-node-sdk": "^4.1.0"
   }
 }
