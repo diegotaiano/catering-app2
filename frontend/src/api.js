@@ -97,8 +97,8 @@ export const api = {
   creaUtente: (dati) => request('/utenti', { method: 'POST', body: dati }),
   aggiornaUtente: (id, dati) => request(`/utenti/${id}`, { method: 'PUT', body: dati }),
   creaSquadra: (evento_id, nome) => request('/squadre', { method: 'POST', body: { evento_id, nome } }),
-  aggiungiMembro: (squadraId, lavoratore_id, ruolo_specifico) =>
-    request(`/squadre/${squadraId}/membri`, { method: 'POST', body: { lavoratore_id, ruolo_specifico } }),
+  aggiungiMembro: (squadraId, lavoratore_id, ruolo_specifico, gruppo) =>
+    request(`/squadre/${squadraId}/membri`, { method: 'POST', body: { lavoratore_id, ruolo_specifico, gruppo } }),
   rimuoviMembro: (membroId) => request(`/squadre/membri/${membroId}`, { method: 'DELETE' }),
   inviaRichieste: (squadraId) => request(`/squadre/${squadraId}/invia-richieste`, { method: 'POST' }),
   confermaEInvia: (squadraId) => request(`/squadre/${squadraId}/conferma-e-invia-cliente`, { method: 'POST' }),

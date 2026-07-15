@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS squadra_membri (
   squadra_id INTEGER NOT NULL REFERENCES squadre(id) ON DELETE CASCADE,
   lavoratore_id INTEGER NOT NULL REFERENCES lavoratori(id),
   ruolo_specifico VARCHAR(100),         -- es. "Capo sala", "Cameriere", "Runner"
+  gruppo VARCHAR(100),                  -- es. "Gruppo Aemme", "Gruppo Samy" — gruppo esterno per questo evento (libero, non anagrafica)
   stato_disponibilita VARCHAR(30) NOT NULL DEFAULT 'da_contattare',
     -- da_contattare | in_attesa | disponibile | non_disponibile
   token_risposta VARCHAR(64) UNIQUE,    -- token magic-link
@@ -141,6 +142,10 @@ ALTER TABLE utenti ADD COLUMN IF NOT EXISTS referente_commerciale_id INTEGER REF
 ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_ospiti_adulti INTEGER;
 ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_bambini INTEGER;
 ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_staff INTEGER;
+
+-- Etichetta libera di gruppo esterno (es. "Gruppo Aemme"), assegnabile a un
+-- membro squadra per un singolo evento. Non è un'anagrafica: si scrive a mano ogni volta.
+ALTER TABLE squadra_membri ADD COLUMN IF NOT EXISTS gruppo VARCHAR(100);
 
 -- Cestino: gli eventi eliminati non vengono cancellati subito, solo marcati.
 -- NULL = evento attivo, valorizzato = eliminato (recuperabile) in quel momento.

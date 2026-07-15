@@ -48,7 +48,7 @@ export async function inviaListaSquadraAlReferente({ to, nomeEvento, dataEvento,
   const righeSquadre = squadreConMembri.map(sq => `
     <h3 style="color:#B5A349; margin-bottom:4px;">${sq.nome}</h3>
     <ul style="margin-top:4px;">
-      ${sq.membri.map(m => `<li>${m.nome} ${m.cognome} — ${m.ruolo_specifico || m.mansione}</li>`).join('')}
+      ${sq.membri.map(m => `<li>${m.nome} ${m.cognome} — ${m.ruolo_specifico || m.mansione}${m.gruppo ? ` <em>(${m.gruppo})</em>` : ''}</li>`).join('')}
     </ul>
   `).join('');
 

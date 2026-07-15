@@ -103,8 +103,9 @@ function costruisciCopertina(evento, squadre, allegati, furgoni) {
         ordinaMembriPerRuolo(squadra.membri).forEach((m) => {
           if (y > doc.page.height - 80) { doc.addPage(); y = 50; }
           const ruolo = m.ruolo_specifico || m.mansione || '';
+          const suffissoGruppo = m.gruppo ? ` (${m.gruppo})` : '';
           doc.font('Helvetica').fontSize(11).fillColor(NERO)
-            .text(`${m.nome} ${m.cognome}`, 60, y, { continued: true, width: 250 })
+            .text(`${m.nome} ${m.cognome}${suffissoGruppo}`, 60, y, { continued: true, width: 250 })
             .fillColor(GRIGIO).text(ruolo ? `  —  ${ruolo}` : '', { continued: true });
           const etichettaStato = m.stato_disponibilita === 'da_contattare'
             ? ''

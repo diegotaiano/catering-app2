@@ -24,15 +24,15 @@ router.post('/', soloResponsabile, async (req, res) => {
 // Aggiungi un lavoratore a una squadra (stato iniziale: da_contattare)
 router.post('/:squadraId/membri', soloResponsabile, async (req, res) => {
   const { squadraId } = req.params;
-  const { lavoratore_id, ruolo_specifico } = req.body;
+  const { lavoratore_id, ruolo_specifico, gruppo } = req.body;
   if (!lavoratore_id) return res.status(400).json({ errore: 'lavoratore_id richiesto' });
 
   const { rows } = await query(
-    `INSERT INTO squadra_membri (squadra_id, lavoratore_id, ruolo_specifico)
-     VALUES ($1,$2,$3)
-     ON CONFLICT (squadra_id, lavoratore_id) DO UPDATE SET ruolo_specifico = EXCLUDED.ruolo_specifico
+    `INSERT INTO squadra_membri (squadra_id, lavoratore_id, ruolo_specifico, gruppo)
+     VALUES ($1,$2,$3,$4)
+     ON CONFLICT (squadra_id, lavoratore_id) DO UPDATE SET ruolo_specifico = EXCLUDED.ruolo_specifico, gruppo = EXCLUDED.gruppo
      RETURNING *`,
-    [squadraId, lavoratore_id, ruolo_specifico]
+    [squadraId, lavoratore_id, ruolo_specifico, gruppo || null]
   );
   res.status(201).json(rows[0]);
 });
@@ -117,7 +117,7 @@ router.post('/:squadraId/conferma-e-invia-cliente', soloResponsabile, async (req
   const tutteSquadre = await query(
     `SELECT sq.id, sq.nome,
        COALESCE(json_agg(
-         json_build_object('nome', l.nome, 'cognome', l.cognome, 'mansione', l.mansione, 'ruolo_specifico', sm.ruolo_specifico)
+         json_build_object('nome', l.nome, 'cognome', l.cognome, 'mansione', l.mansione, 'ruolo_specifico', sm.ruolo_specifico, 'gruppo', l.gruppo)
        ) FILTER (WHERE sm.stato_disponibilita = 'disponibile'), '[]') AS membri
      FROM squadre sq
      LEFT JOIN squadra_membri sm ON sm.squadra_id = sq.id

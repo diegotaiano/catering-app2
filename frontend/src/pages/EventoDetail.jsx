@@ -89,10 +89,10 @@ export default function EventoDetail() {
     carica();
   }
 
-  async function handleAggiungiMembriMultipli(squadraId, idsLavoratori) {
+  async function handleAggiungiMembriMultipli(squadraId, idsLavoratori, gruppo) {
     if (!idsLavoratori || idsLavoratori.length === 0) return;
     for (const idLavoratore of idsLavoratori) {
-      await api.aggiungiMembro(squadraId, Number(idLavoratore), null);
+      await api.aggiungiMembro(squadraId, Number(idLavoratore), null, gruppo || null);
     }
     carica();
   }
@@ -311,6 +311,7 @@ export default function EventoDetail() {
 
 function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onAggiungiMembriMultipli, onInviaRichieste, onConfermaEInvia, onRimuovi }) {
   const [selezionati, setSelezionati] = useState([]);
+  const [gruppo, setGruppo] = useState('');
 
   const tuttiDisponibili = squadra.membri.length > 0 && squadra.membri.every(m => m.stato_disponibilita === 'disponibile');
   const cePersoneDaContattare = squadra.membri.some(m => m.stato_disponibilita === 'da_contattare');
@@ -324,8 +325,9 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
   }
 
   async function confermaAggiunta() {
-    await onAggiungiMembriMultipli(squadra.id, selezionati);
+    await onAggiungiMembriMultipli(squadra.id, selezionati, gruppo);
     setSelezionati([]);
+    setGruppo('');
   }
 
   return (
@@ -337,7 +339,7 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
 
       {squadra.membri.map(m => (
         <div key={m.id} className="row" style={{ padding: '6px 0', borderBottom: '1px solid #eee' }}>
-          <span>{m.nome} {m.cognome} {m.ruolo_specifico ? `— ${m.ruolo_specifico}` : ''} <em style={{ color: '#999' }}>({m.mansione})</em></span>
+          <span>{m.nome} {m.cognome} {m.ruolo_specifico ? `— ${m.ruolo_specifico}` : ''} <em style={{ color: '#999' }}>({m.mansione})</em>{m.gruppo ? <em style={{ color: 'var(--oro-scuro)' }}> · {m.gruppo}</em> : ''}</span>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span className={`badge ${m.stato_disponibilita}`}>{ETICHETTE_STATO[m.stato_disponibilita]}</span>
             {puoModificare && <button className="danger" onClick={() => onRimuovi(m.id)}>Rimuovi</button>}
@@ -362,6 +364,8 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
                 <p style={{ fontSize: 13, color: '#8B5E3C', margin: 0 }}>Tutti i lavoratori disponibili sono già stati aggiunti.</p>
               )}
             </div>
+            <input placeholder="Nome gruppo esterno (opzionale, es. Gruppo Aemme, Gruppo Samy)" value={gruppo}
+              onChange={e => setGruppo(e.target.value)} style={{ marginTop: 8, marginBottom: 0 }} />
             <div className="row" style={{ marginTop: 10 }}>
               <span style={{ fontSize: 13, color: '#8B5E3C' }}>
                 {selezionati.length} selezionat{selezionati.length === 1 ? 'o' : 'i'}

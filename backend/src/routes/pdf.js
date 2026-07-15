@@ -36,7 +36,7 @@ router.get('/:id/pdf', async (req, res) => {
        COALESCE(json_agg(
          json_build_object(
            'nome', l.nome, 'cognome', l.cognome, 'mansione', l.mansione,
-           'ruolo_specifico', sm.ruolo_specifico, 'stato_disponibilita', sm.stato_disponibilita
+           'ruolo_specifico', sm.ruolo_specifico, 'gruppo', sm.gruppo, 'stato_disponibilita', sm.stato_disponibilita
          ) ORDER BY l.cognome
        ) FILTER (WHERE sm.id IS NOT NULL), '[]') AS membri
      FROM squadre sq
