@@ -27,13 +27,18 @@ const REGOLE_PRIORITA = [
 function indicePriorita(membro) {
   const effettiva = (membro.ruolo_specifico || membro.mansione || '').trim().toLowerCase();
   const regola = REGOLE_PRIORITA.find(r => effettiva.includes(r.chiave));
-  return regola ? regola.peso : REGOLE_PRIORITA.length;
+  if (regola) return regola.peso;
+  // Chi appartiene a un gruppo esterno va subito dopo i camerieri, prima di tutto il resto
+  if (membro.gruppo) return REGOLE_PRIORITA.length;
+  return REGOLE_PRIORITA.length + 1;
 }
 
 function ordinaMembriPerRuolo(membri) {
   return [...(membri || [])].sort((a, b) => {
     const diff = indicePriorita(a) - indicePriorita(b);
     if (diff !== 0) return diff;
+    const diffGruppo = (a.gruppo || '').localeCompare(b.gruppo || '');
+    if (diffGruppo !== 0) return diffGruppo;
     return (a.cognome || '').localeCompare(b.cognome || '');
   });
 }

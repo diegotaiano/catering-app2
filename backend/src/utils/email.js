@@ -66,3 +66,29 @@ export async function inviaListaSquadraAlReferente({ to, nomeEvento, dataEvento,
     `
   });
 }
+
+// Email al referente di un gruppo esterno (es. Gruppo Samy, Gruppo Aemme) con la
+// richiesta numerica di personale per un evento. I nominativi arrivano poi per altra via.
+export async function inviaRichiestaGruppo({ to, nomeGruppo, numeroRichiesto, nomeEvento, dataEvento, luogo }) {
+  const dataFormattata = new Date(dataEvento).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Richiesta personale - ${nomeEvento} (${dataFormattata})`,
+    html: `
+      <div style="font-family: 'EB Garamond', Georgia, serif; max-width: 560px; margin: 0 auto; color: #232021; background: #FDFCFA; padding: 24px;">
+        <h2 style="color:#232021;">Richiesta personale — ${nomeGruppo}</h2>
+        <p>Ciao,</p>
+        <p>Per il seguente evento ci servirebbero <strong>${numeroRichiesto} person${numeroRichiesto === 1 ? 'a' : 'e'}</strong>:</p>
+        <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
+          <tr><td style="padding:4px 0;"><strong>Evento:</strong></td><td>${nomeEvento}</td></tr>
+          <tr><td style="padding:4px 0;"><strong>Data:</strong></td><td>${dataFormattata}</td></tr>
+          <tr><td style="padding:4px 0;"><strong>Luogo:</strong></td><td>${luogo || '-'}</td></tr>
+        </table>
+        <p>Facci sapere chi potrà essere presente, grazie!</p>
+        <p style="font-size: 13px; color: #B5A349; border-top: 1px solid #EFEBDF; padding-top: 10px; margin-top:24px;">Rock Srl Catering</p>
+      </div>
+    `
+  });
+}

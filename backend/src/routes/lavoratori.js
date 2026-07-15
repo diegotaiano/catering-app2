@@ -13,25 +13,42 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', soloResponsabile, async (req, res) => {
-  const { nome, cognome, email, telefono, mansione, note } = req.body;
-  if (!nome || !cognome || !email) return res.status(400).json({ errore: 'nome, cognome, email richiesti' });
+  const { nome, cognome, email, telefono, mansione, gruppo, note } = req.body;
+  if (!nome || !cognome) return res.status(400).json({ errore: 'nome e cognome richiesti' });
 
   const { rows } = await query(
-    `INSERT INTO lavoratori (nome, cognome, email, telefono, mansione, note) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-    [nome, cognome, email, telefono, mansione, note]
+    `INSERT INTO lavoratori (nome, cognome, email, telefono, mansione, gruppo, note) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+    [nome, cognome, email || null, telefono, mansione, gruppo || null, note]
   );
   res.status(201).json(rows[0]);
 });
 
 router.put('/:id', soloResponsabile, async (req, res) => {
   const { id } = req.params;
-  const { nome, cognome, email, telefono, mansione, note } = req.body;
+  const { nome, cognome, email, telefono, mansione, gruppo, note } = req.body;
   const { rows } = await query(
-    `UPDATE lavoratori SET nome=$1, cognome=$2, email=$3, telefono=$4, mansione=$5, note=$6 WHERE id=$7 RETURNING *`,
-    [nome, cognome, email, telefono, mansione, note, id]
+    `UPDATE lavoratori SET nome=$1, cognome=$2, email=$3, telefono=$4, mansione=$5, gruppo=$6, note=$7 WHERE id=$8 RETURNING *`,
+    [nome, cognome, email, telefono, mansione, gruppo || null, note, id]
   );
   if (!rows[0]) return res.status(404).json({ errore: 'Lavoratore non trovato' });
   res.json(rows[0]);
+});
+
+// Elenco nomi di gruppi esterni già usati, per suggerire il nome gruppo la prossima volta
+router.get('/gruppi/suggerimenti', async (req, res) => {
+  const { rows } = await query(
+    `SELECT DISTINCT gruppo FROM lavoratori WHERE gruppo IS NOT NULL AND gruppo <> '' ORDER BY gruppo`
+  );
+  res.json(rows.map(r => r.gruppo));
+});
+
+// Persone già registrate per un determinato gruppo esterno, per suggerire i nomi
+router.get('/gruppi/:nomeGruppo/persone', async (req, res) => {
+  const { rows } = await query(
+    `SELECT id, nome, cognome, mansione FROM lavoratori WHERE gruppo = $1 AND attivo = true ORDER BY cognome, nome`,
+    [req.params.nomeGruppo]
+  );
+  res.json(rows);
 });
 
 // Disattivazione soft-delete: non elimina fisicamente per non rompere lo storico squadre passate

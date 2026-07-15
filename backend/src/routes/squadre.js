@@ -21,18 +21,22 @@ router.post('/', soloResponsabile, async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
-// Aggiungi un lavoratore a una squadra (stato iniziale: da_contattare)
+// Aggiungi un lavoratore a una squadra. Stato di default: da_contattare (serve invio email).
+// Per persone già confermate altrove (es. gruppi esterni) si può passare stato_disponibilita='disponibile'
+// direttamente, saltando il giro dell'email.
 router.post('/:squadraId/membri', soloResponsabile, async (req, res) => {
   const { squadraId } = req.params;
-  const { lavoratore_id, ruolo_specifico, gruppo } = req.body;
+  const { lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita } = req.body;
   if (!lavoratore_id) return res.status(400).json({ errore: 'lavoratore_id richiesto' });
 
+  const statoIniziale = stato_disponibilita === 'disponibile' ? 'disponibile' : 'da_contattare';
+
   const { rows } = await query(
-    `INSERT INTO squadra_membri (squadra_id, lavoratore_id, ruolo_specifico, gruppo)
-     VALUES ($1,$2,$3,$4)
-     ON CONFLICT (squadra_id, lavoratore_id) DO UPDATE SET ruolo_specifico = EXCLUDED.ruolo_specifico, gruppo = EXCLUDED.gruppo
+    `INSERT INTO squadra_membri (squadra_id, lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita)
+     VALUES ($1,$2,$3,$4,$5)
+     ON CONFLICT (squadra_id, lavoratore_id) DO UPDATE SET ruolo_specifico = EXCLUDED.ruolo_specifico, gruppo = EXCLUDED.gruppo, stato_disponibilita = EXCLUDED.stato_disponibilita
      RETURNING *`,
-    [squadraId, lavoratore_id, ruolo_specifico, gruppo || null]
+    [squadraId, lavoratore_id, ruolo_specifico, gruppo || null, statoIniziale]
   );
   res.status(201).json(rows[0]);
 });

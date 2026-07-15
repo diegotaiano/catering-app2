@@ -147,6 +147,25 @@ ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_staff INTEGER;
 -- membro squadra per un singolo evento. Non è un'anagrafica: si scrive a mano ogni volta.
 ALTER TABLE squadra_membri ADD COLUMN IF NOT EXISTS gruppo VARCHAR(100);
 
+-- Etichetta di gruppo esterno storica/di default per un lavoratore, usata per
+-- suggerire il nome la prossima volta che si aggiunge qualcuno allo stesso gruppo.
+ALTER TABLE lavoratori ADD COLUMN IF NOT EXISTS gruppo VARCHAR(100);
+
+-- Richiesta numerica a un gruppo esterno per un evento: quante persone servono,
+-- inviata via email al referente del gruppo. I nominativi effettivi arrivano poi
+-- per altra via (telefono/whatsapp) e si inseriscono a mano in squadra_membri.
+CREATE TABLE IF NOT EXISTS richieste_gruppo (
+  id SERIAL PRIMARY KEY,
+  evento_id INTEGER NOT NULL REFERENCES eventi(id) ON DELETE CASCADE,
+  nome_gruppo VARCHAR(100) NOT NULL,
+  numero_richiesto INTEGER NOT NULL,
+  email_contatto VARCHAR(255),
+  stato VARCHAR(30) NOT NULL DEFAULT 'inviata', -- inviata | completata
+  creato_da INTEGER REFERENCES utenti(id),
+  creato_il TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_richieste_gruppo_evento ON richieste_gruppo(evento_id);
+
 -- Cestino: gli eventi eliminati non vengono cancellati subito, solo marcati.
 -- NULL = evento attivo, valorizzato = eliminato (recuperabile) in quel momento.
 ALTER TABLE eventi ADD COLUMN IF NOT EXISTS eliminato_il TIMESTAMPTZ;

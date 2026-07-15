@@ -23,6 +23,8 @@ export default function EventoDetail() {
   const [modificaAperta, setModificaAperta] = useState(false);
   const [formEvento, setFormEvento] = useState(null);
   const [furgoni, setFurgoni] = useState([]);
+  const [gruppiRichieste, setGruppiRichieste] = useState([]);
+  const [suggerimentiGruppi, setSuggerimentiGruppi] = useState([]);
 
   async function caricaFurgoni(dataEvento) {
     if (puoModificare) {
@@ -43,13 +45,16 @@ export default function EventoDetail() {
   }
 
   async function carica() {
-    const [ev, lav, ref, ut] = await Promise.all([
-      api.getEvento(id), api.getLavoratori(), api.getReferenti(), api.getUtenti().catch(() => [])
+    const [ev, lav, ref, ut, gruppi, suggGruppi] = await Promise.all([
+      api.getEvento(id), api.getLavoratori(), api.getReferenti(), api.getUtenti().catch(() => []),
+      api.getGruppiEvento(id).catch(() => []), api.getSuggerimentiGruppi().catch(() => [])
     ]);
     setEvento(ev);
     setLavoratori(lav);
     setReferenti(ref);
     setCapiServizio(ut.filter(u => u.attivo));
+    setGruppiRichieste(gruppi);
+    setSuggerimentiGruppi(suggGruppi);
     await caricaFurgoni(ev.data_evento);
     if (!modificaAperta) {
       setFormEvento({
@@ -131,6 +136,45 @@ export default function EventoDetail() {
   async function handleScaricaPdf() {
     try {
       await api.scaricaPdfEvento(id, evento.nome);
+    } catch (err) {
+      setMessaggio(`Errore: ${err.message}`);
+    }
+  }
+
+  async function handleCreaRichiestaGruppo(dati) {
+    try {
+      await api.creaRichiestaGruppo(id, dati);
+      carica();
+      return true;
+    } catch (err) {
+      setMessaggio(`Errore: ${err.message}`);
+      return false;
+    }
+  }
+
+  async function handleCompletaRichiestaGruppo(richiestaId) {
+    await api.aggiornaRichiestaGruppo(id, richiestaId, { stato: 'completata' });
+    carica();
+  }
+
+  async function handleEliminaRichiestaGruppo(richiestaId) {
+    if (!confirm('Eliminare questa richiesta?')) return;
+    await api.eliminaRichiestaGruppo(id, richiestaId);
+    carica();
+  }
+
+  async function handleAggiungiPersonaGruppo(squadraId, dati) {
+    try {
+      let lavoratoreId = dati.lavoratoreEsistenteId;
+      if (!lavoratoreId) {
+        const nuovo = await api.creaLavoratore({
+          nome: dati.nome, cognome: dati.cognome, email: dati.email || null,
+          mansione: dati.mansione || null, gruppo: dati.gruppo || null
+        });
+        lavoratoreId = nuovo.id;
+      }
+      await api.aggiungiMembro(squadraId, lavoratoreId, null, dati.gruppo || null, 'disponibile');
+      carica();
     } catch (err) {
       setMessaggio(`Errore: ${err.message}`);
     }
@@ -292,6 +336,16 @@ export default function EventoDetail() {
         )}
       </div>
 
+      {puoModificare && (
+        <GruppiEsterniCard
+          richieste={gruppiRichieste}
+          suggerimenti={suggerimentiGruppi}
+          onCrea={handleCreaRichiestaGruppo}
+          onCompleta={handleCompletaRichiestaGruppo}
+          onElimina={handleEliminaRichiestaGruppo}
+        />
+      )}
+
       {evento.squadre.map(sq => (
         <SquadraCard
           key={sq.id}
@@ -300,6 +354,8 @@ export default function EventoDetail() {
           puoModificare={puoModificare}
           onAggiungiMembro={handleAggiungiMembro}
           onAggiungiMembriMultipli={handleAggiungiMembriMultipli}
+          onAggiungiPersonaGruppo={handleAggiungiPersonaGruppo}
+          suggerimentiGruppi={suggerimentiGruppi}
           onInviaRichieste={handleInviaRichieste}
           onConfermaEInvia={handleConfermaEInvia}
           onRimuovi={async (membroId) => { await api.rimuoviMembro(membroId); carica(); }}
@@ -309,7 +365,65 @@ export default function EventoDetail() {
   );
 }
 
-function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onAggiungiMembriMultipli, onInviaRichieste, onConfermaEInvia, onRimuovi }) {
+function GruppiEsterniCard({ richieste, suggerimenti, onCrea, onCompleta, onElimina }) {
+  const [nomeGruppo, setNomeGruppo] = useState('');
+  const [numeroRichiesto, setNumeroRichiesto] = useState('');
+  const [emailContatto, setEmailContatto] = useState('');
+  const [invio, setInvio] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!nomeGruppo || !numeroRichiesto) return;
+    setInvio(true);
+    const ok = await onCrea({ nome_gruppo: nomeGruppo, numero_richiesto: Number(numeroRichiesto), email_contatto: emailContatto || null });
+    setInvio(false);
+    if (ok) { setNomeGruppo(''); setNumeroRichiesto(''); setEmailContatto(''); }
+  }
+
+  return (
+    <div className="card">
+      <h3>Gruppi esterni</h3>
+      <p style={{ fontSize: 13, color: '#8B5E3C', marginTop: -8 }}>
+        Richiedi un numero di persone a un gruppo esterno (es. Gruppo Aemme, Gruppo Samy). Se indichi un'email, parte subito una richiesta automatica.
+      </p>
+
+      {richieste.map(r => (
+        <div key={r.id} className="row" style={{ padding: '6px 0', borderBottom: '1px solid #eee' }}>
+          <span>
+            <strong>{r.nome_gruppo}</strong> — {r.numero_richiesto} persone
+            {r.email_contatto ? ` · richiesta inviata a ${r.email_contatto}` : ' · nessuna email inviata'}
+          </span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span className={`badge ${r.stato === 'completata' ? 'disponibile' : 'in_attesa'}`}>
+              {r.stato === 'completata' ? 'Completata' : 'In attesa nomi'}
+            </span>
+            {r.stato !== 'completata' && (
+              <button className="secondary" onClick={() => onCompleta(r.id)}>Segna completata</button>
+            )}
+            <button className="danger" onClick={() => onElimina(r.id)}>Elimina</button>
+          </div>
+        </div>
+      ))}
+
+      <form onSubmit={handleSubmit} style={{ marginTop: 12 }}>
+        <div className="row">
+          <input list="suggerimenti-gruppi" placeholder="Nome gruppo (es. Gruppo Samy)" value={nomeGruppo}
+            onChange={e => setNomeGruppo(e.target.value)} style={{ marginBottom: 0 }} />
+          <datalist id="suggerimenti-gruppi">
+            {suggerimenti.map(g => <option key={g} value={g} />)}
+          </datalist>
+          <input type="number" min="1" placeholder="Numero persone" value={numeroRichiesto}
+            onChange={e => setNumeroRichiesto(e.target.value)} style={{ marginBottom: 0, maxWidth: 140 }} />
+        </div>
+        <input type="email" placeholder="Email contatto gruppo (opzionale)" value={emailContatto}
+          onChange={e => setEmailContatto(e.target.value)} />
+        <button type="submit" disabled={invio}>{invio ? 'Invio...' : 'Richiedi personale'}</button>
+      </form>
+    </div>
+  );
+}
+
+function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onAggiungiMembriMultipli, onAggiungiPersonaGruppo, suggerimentiGruppi, onInviaRichieste, onConfermaEInvia, onRimuovi }) {
   const [selezionati, setSelezionati] = useState([]);
   const [gruppo, setGruppo] = useState('');
 
@@ -376,6 +490,8 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
             </div>
           </div>
 
+          <PersonaGruppoForm squadraId={squadra.id} suggerimentiGruppi={suggerimentiGruppi} onAggiungi={onAggiungiPersonaGruppo} />
+
           <div className="row" style={{ marginTop: 12 }}>
             <button className="secondary" disabled={!cePersoneDaContattare} onClick={() => onInviaRichieste(squadra.id)}>
               Invia richieste disponibilità
@@ -387,5 +503,56 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
         </>
       )}
     </div>
+  );
+}
+
+function PersonaGruppoForm({ squadraId, suggerimentiGruppi, onAggiungi }) {
+  const [nome, setNome] = useState('');
+  const [cognome, setCognome] = useState('');
+  const [gruppo, setGruppo] = useState('');
+  const [personeGruppo, setPersoneGruppo] = useState([]);
+  const [invio, setInvio] = useState(false);
+
+  useEffect(() => {
+    if (!gruppo) { setPersoneGruppo([]); return; }
+    api.getPersoneGruppo(gruppo).then(setPersoneGruppo).catch(() => setPersoneGruppo([]));
+  }, [gruppo]);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!nome || !cognome) return;
+    setInvio(true);
+    // Se esiste già una persona con questo nome/cognome nello stesso gruppo, riusa quella
+    const esistente = personeGruppo.find(p =>
+      p.nome.toLowerCase() === nome.toLowerCase() && p.cognome.toLowerCase() === cognome.toLowerCase()
+    );
+    await onAggiungi(squadraId, {
+      nome, cognome, gruppo: gruppo || null,
+      mansione: esistente?.mansione || null,
+      lavoratoreEsistenteId: esistente?.id || null
+    });
+    setInvio(false);
+    setNome('');
+    setCognome('');
+  }
+
+  return (
+    <form onSubmit={handleSubmit} style={{ marginTop: 16, borderTop: '1px solid #eee', paddingTop: 12 }}>
+      <p style={{ fontSize: 13, color: '#8B5E3C', marginTop: 0, marginBottom: 6 }}>
+        Aggiungi una persona già confermata da un gruppo esterno (niente email di richiesta, risulta subito disponibile):
+      </p>
+      <div className="row">
+        <input placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} style={{ marginBottom: 0 }} />
+        <input placeholder="Cognome" value={cognome} onChange={e => setCognome(e.target.value)} style={{ marginBottom: 0 }} />
+      </div>
+      <input list="suggerimenti-gruppi-persona" placeholder="Gruppo (es. Gruppo Samy)" value={gruppo}
+        onChange={e => setGruppo(e.target.value)} />
+      <datalist id="suggerimenti-gruppi-persona">
+        {suggerimentiGruppi.map(g => <option key={g} value={g} />)}
+      </datalist>
+      <button type="submit" className="secondary" disabled={invio || !nome || !cognome}>
+        {invio ? 'Aggiungo...' : 'Aggiungi persona'}
+      </button>
+    </form>
   );
 }
