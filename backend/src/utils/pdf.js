@@ -105,7 +105,16 @@ function costruisciCopertina(evento, squadre, allegati, furgoni) {
         doc.font('Helvetica').fontSize(10).fillColor(GRIGIO).text('Nessun membro assegnato', 60, y);
         y += 18;
       } else {
+        const LIMITE_BACK_OFFICE = 2; // Chef=0, Aiuto Cucina=1, Sbarazzo=2 → back office
+        let eraBackOffice = null;
         ordinaMembriPerRuolo(squadra.membri).forEach((m) => {
+          const priorita = indicePriorita(m);
+          const eBackOffice = priorita <= LIMITE_BACK_OFFICE;
+          if (eraBackOffice === true && eBackOffice === false) {
+            y += 14; // spazio visivo tra back office e front office
+          }
+          eraBackOffice = eBackOffice;
+
           if (y > doc.page.height - 80) { doc.addPage(); y = 50; }
           const ruolo = m.ruolo_specifico || m.mansione || '';
           const suffissoGruppo = m.gruppo ? ` (${m.gruppo})` : '';
