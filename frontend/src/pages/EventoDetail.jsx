@@ -163,21 +163,42 @@ export default function EventoDetail() {
     carica();
   }
 
-  async function handleAggiungiPersonaGruppo(squadraId, dati) {
-    try {
-      let lavoratoreId = dati.lavoratoreEsistenteId;
-      if (!lavoratoreId) {
-        const nuovo = await api.creaLavoratore({
-          nome: dati.nome, cognome: dati.cognome, email: dati.email || null,
-          mansione: dati.mansione || null, gruppo: dati.gruppo || null
-        });
-        lavoratoreId = nuovo.id;
-      }
-      await api.aggiungiMembro(squadraId, lavoratoreId, null, dati.gruppo || null, 'disponibile');
-      carica();
-    } catch (err) {
-      setMessaggio(`Errore: ${err.message}`);
+  // Divide un testo incollato (una persona per riga) in nome/cognome, e li aggiunge
+  // tutti in un colpo solo, riusando chi esiste già nello stesso gruppo.
+  async function handleAggiungiListaGruppo(squadraId, testoLista, gruppo) {
+    const righe = testoLista
+      .split('\n')
+      .map(r => r.trim())
+      .filter(r => r.length > 0);
+
+    if (righe.length === 0) return;
+
+    let personeGruppo = [];
+    if (gruppo) {
+      try { personeGruppo = await api.getPersoneGruppo(gruppo); } catch { personeGruppo = []; }
     }
+
+    for (const riga of righe) {
+      const parti = riga.split(/\s+/);
+      const nome = parti[0] || riga;
+      const cognome = parti.slice(1).join(' ') || '-';
+
+      const esistente = personeGruppo.find(p =>
+        p.nome.toLowerCase() === nome.toLowerCase() && p.cognome.toLowerCase() === cognome.toLowerCase()
+      );
+
+      try {
+        let lavoratoreId = esistente?.id;
+        if (!lavoratoreId) {
+          const nuovo = await api.creaLavoratore({ nome, cognome, email: null, mansione: esistente?.mansione || null, gruppo: gruppo || null });
+          lavoratoreId = nuovo.id;
+        }
+        await api.aggiungiMembro(squadraId, lavoratoreId, null, gruppo || null, 'disponibile');
+      } catch (err) {
+        setMessaggio(`Errore aggiungendo "${riga}": ${err.message}`);
+      }
+    }
+    carica();
   }
 
   async function handleEliminaEvento() {
@@ -354,7 +375,7 @@ export default function EventoDetail() {
           puoModificare={puoModificare}
           onAggiungiMembro={handleAggiungiMembro}
           onAggiungiMembriMultipli={handleAggiungiMembriMultipli}
-          onAggiungiPersonaGruppo={handleAggiungiPersonaGruppo}
+          onAggiungiPersonaGruppo={handleAggiungiListaGruppo}
           suggerimentiGruppi={suggerimentiGruppi}
           onInviaRichieste={handleInviaRichieste}
           onConfermaEInvia={handleConfermaEInvia}
@@ -490,7 +511,7 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
             </div>
           </div>
 
-          <PersonaGruppoForm squadraId={squadra.id} suggerimentiGruppi={suggerimentiGruppi} onAggiungi={onAggiungiPersonaGruppo} />
+          <PersonaGruppoForm squadraId={squadra.id} suggerimentiGruppi={suggerimentiGruppi} onAggiungiLista={onAggiungiPersonaGruppo} />
 
           <div className="row" style={{ marginTop: 12 }}>
             <button className="secondary" disabled={!cePersoneDaContattare} onClick={() => onInviaRichieste(squadra.id)}>
@@ -506,53 +527,46 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
   );
 }
 
-function PersonaGruppoForm({ squadraId, suggerimentiGruppi, onAggiungi }) {
-  const [nome, setNome] = useState('');
-  const [cognome, setCognome] = useState('');
+function PersonaGruppoForm({ squadraId, suggerimentiGruppi, onAggiungiLista }) {
   const [gruppo, setGruppo] = useState('');
-  const [personeGruppo, setPersoneGruppo] = useState([]);
+  const [testoLista, setTestoLista] = useState('');
   const [invio, setInvio] = useState(false);
 
-  useEffect(() => {
-    if (!gruppo) { setPersoneGruppo([]); return; }
-    api.getPersoneGruppo(gruppo).then(setPersoneGruppo).catch(() => setPersoneGruppo([]));
-  }, [gruppo]);
+  const nomiValidi = testoLista.split('\n').map(r => r.trim()).filter(r => r.length > 0);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!nome || !cognome) return;
+    if (nomiValidi.length === 0) return;
     setInvio(true);
-    // Se esiste già una persona con questo nome/cognome nello stesso gruppo, riusa quella
-    const esistente = personeGruppo.find(p =>
-      p.nome.toLowerCase() === nome.toLowerCase() && p.cognome.toLowerCase() === cognome.toLowerCase()
-    );
-    await onAggiungi(squadraId, {
-      nome, cognome, gruppo: gruppo || null,
-      mansione: esistente?.mansione || null,
-      lavoratoreEsistenteId: esistente?.id || null
-    });
+    await onAggiungiLista(squadraId, testoLista, gruppo);
     setInvio(false);
-    setNome('');
-    setCognome('');
+    setTestoLista('');
   }
 
   return (
     <form onSubmit={handleSubmit} style={{ marginTop: 16, borderTop: '1px solid #eee', paddingTop: 12 }}>
       <p style={{ fontSize: 13, color: '#8B5E3C', marginTop: 0, marginBottom: 6 }}>
-        Aggiungi una persona già confermata da un gruppo esterno (niente email di richiesta, risulta subito disponibile):
+        Incolla qui la lista che ti manda il gruppo esterno (un nome e cognome per riga) — risultano subito disponibili, senza email di richiesta:
       </p>
-      <div className="row">
-        <input placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} style={{ marginBottom: 0 }} />
-        <input placeholder="Cognome" value={cognome} onChange={e => setCognome(e.target.value)} style={{ marginBottom: 0 }} />
-      </div>
       <input list="suggerimenti-gruppi-persona" placeholder="Gruppo (es. Gruppo Samy)" value={gruppo}
         onChange={e => setGruppo(e.target.value)} />
       <datalist id="suggerimenti-gruppi-persona">
         {suggerimentiGruppi.map(g => <option key={g} value={g} />)}
       </datalist>
-      <button type="submit" className="secondary" disabled={invio || !nome || !cognome}>
-        {invio ? 'Aggiungo...' : 'Aggiungi persona'}
-      </button>
+      <textarea
+        placeholder={'Mario Rossi\nLuigi Bianchi\nAnna Verdi'}
+        value={testoLista}
+        onChange={e => setTestoLista(e.target.value)}
+        rows={4}
+      />
+      <div className="row">
+        <span style={{ fontSize: 13, color: '#8B5E3C' }}>
+          {nomiValidi.length} nom{nomiValidi.length === 1 ? 'e' : 'i'} pront{nomiValidi.length === 1 ? 'o' : 'i'} da aggiungere
+        </span>
+        <button type="submit" className="secondary" disabled={invio || nomiValidi.length === 0}>
+          {invio ? 'Aggiungo...' : 'Aggiungi lista'}
+        </button>
+      </div>
     </form>
   );
 }
