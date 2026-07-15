@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { haAccessoCompleto } from '../ruoli.js';
+import CampoIndirizzo from '../components/CampoIndirizzo.jsx';
 
 const ETICHETTE_STATO = {
   da_contattare: 'Da contattare',
@@ -275,8 +276,8 @@ export default function EventoDetail() {
                   onChange={e => setFormEvento({ ...formEvento, ora_fine: e.target.value })} />
               </div>
             </div>
-            <input placeholder="Luogo" value={formEvento.luogo}
-              onChange={e => setFormEvento({ ...formEvento, luogo: e.target.value })} />
+            <CampoIndirizzo value={formEvento.luogo}
+              onChange={val => setFormEvento({ ...formEvento, luogo: val })} />
             <label style={{ fontSize: 13, color: '#8B5E3C' }}>Numero presenti</label>
             <div className="row">
               <input type="number" min="0" placeholder="Ospiti adulti" value={formEvento.numero_ospiti_adulti}

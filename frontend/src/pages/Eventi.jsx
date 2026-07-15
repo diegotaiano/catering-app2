@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { haAccessoCompleto } from '../ruoli.js';
+import CampoIndirizzo from '../components/CampoIndirizzo.jsx';
 
 const VUOTO = {
   nome: '', brand: 'Lanzarotti1967', cliente: '', data_evento: '',
@@ -158,8 +159,8 @@ export default function Eventi() {
               </div>
             </div>
 
-            <input placeholder="Luogo" value={nuovoEvento.luogo}
-              onChange={e => setNuovoEvento({ ...nuovoEvento, luogo: e.target.value })} />
+            <CampoIndirizzo value={nuovoEvento.luogo}
+              onChange={val => setNuovoEvento({ ...nuovoEvento, luogo: val })} />
 
             <label style={{ fontSize: 13, color: '#8B5E3C' }}>Numero presenti</label>
             <div className="row">
