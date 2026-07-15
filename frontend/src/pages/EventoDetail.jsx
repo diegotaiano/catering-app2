@@ -94,17 +94,11 @@ export default function EventoDetail() {
     carica();
   }
 
-  async function handleAggiungiMembriMultipli(squadraId, idsLavoratori, gruppo) {
+  async function handleAggiungiMembriMultipli(squadraId, idsLavoratori, gruppo, puntoRitrovo) {
     if (!idsLavoratori || idsLavoratori.length === 0) return;
     for (const idLavoratore of idsLavoratori) {
-      await api.aggiungiMembro(squadraId, Number(idLavoratore), null, gruppo || null);
+      await api.aggiungiMembro(squadraId, Number(idLavoratore), null, gruppo || null, null, puntoRitrovo || 'sede');
     }
-    carica();
-  }
-
-  async function handleInviaRichieste(squadraId) {
-    const res = await api.inviaRichieste(squadraId);
-    setMessaggio(`Inviate ${res.inviate} richieste di disponibilità.`);
     carica();
   }
 
@@ -165,7 +159,7 @@ export default function EventoDetail() {
 
   // Divide un testo incollato (una persona per riga) in nome/cognome, e li aggiunge
   // tutti in un colpo solo, riusando chi esiste già nello stesso gruppo.
-  async function handleAggiungiListaGruppo(squadraId, testoLista, gruppo) {
+  async function handleAggiungiListaGruppo(squadraId, testoLista, gruppo, puntoRitrovo) {
     const righe = testoLista
       .split('\n')
       .map(r => r.trim())
@@ -193,7 +187,7 @@ export default function EventoDetail() {
           const nuovo = await api.creaLavoratore({ nome, cognome, email: null, mansione: esistente?.mansione || null, gruppo: gruppo || null });
           lavoratoreId = nuovo.id;
         }
-        await api.aggiungiMembro(squadraId, lavoratoreId, null, gruppo || null, 'disponibile');
+        await api.aggiungiMembro(squadraId, lavoratoreId, null, gruppo || null, 'disponibile', puntoRitrovo || 'sede');
       } catch (err) {
         setMessaggio(`Errore aggiungendo "${riga}": ${err.message}`);
       }
@@ -377,7 +371,6 @@ export default function EventoDetail() {
           onAggiungiMembriMultipli={handleAggiungiMembriMultipli}
           onAggiungiPersonaGruppo={handleAggiungiListaGruppo}
           suggerimentiGruppi={suggerimentiGruppi}
-          onInviaRichieste={handleInviaRichieste}
           onConfermaEInvia={handleConfermaEInvia}
           onRimuovi={async (membroId) => { await api.rimuoviMembro(membroId); carica(); }}
         />
@@ -390,13 +383,24 @@ function GruppiEsterniCard({ richieste, suggerimenti, onCrea, onCompleta, onElim
   const [nomeGruppo, setNomeGruppo] = useState('');
   const [numeroRichiesto, setNumeroRichiesto] = useState('');
   const [emailContatto, setEmailContatto] = useState('');
+  const [puntoRitrovo, setPuntoRitrovo] = useState('sede');
   const [invio, setInvio] = useState(false);
+
+  const ETICHETTE_STATO_GRUPPO = {
+    in_attesa_invio: 'In attesa di invio',
+    inviata: 'Richiesta inviata',
+    confermata: 'Confermata',
+    rifiutata: 'Rifiutata'
+  };
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!nomeGruppo || !numeroRichiesto) return;
     setInvio(true);
-    const ok = await onCrea({ nome_gruppo: nomeGruppo, numero_richiesto: Number(numeroRichiesto), email_contatto: emailContatto || null });
+    const ok = await onCrea({
+      nome_gruppo: nomeGruppo, numero_richiesto: Number(numeroRichiesto),
+      email_contatto: emailContatto || null, punto_ritrovo: puntoRitrovo
+    });
     setInvio(false);
     if (ok) { setNomeGruppo(''); setNumeroRichiesto(''); setEmailContatto(''); }
   }
@@ -405,22 +409,19 @@ function GruppiEsterniCard({ richieste, suggerimenti, onCrea, onCompleta, onElim
     <div className="card">
       <h3>Gruppi esterni</h3>
       <p style={{ fontSize: 13, color: '#8B5E3C', marginTop: -8 }}>
-        Richiedi un numero di persone a un gruppo esterno (es. Gruppo Aemme, Gruppo Samy). Se indichi un'email, parte subito una richiesta automatica.
+        Segna quante persone ti servono da un gruppo esterno. La email parte con il comando "Richiedi disponibilità" nella vista settimanale, insieme a tutte le altre richieste della settimana.
       </p>
 
       {richieste.map(r => (
         <div key={r.id} className="row" style={{ padding: '6px 0', borderBottom: '1px solid #eee' }}>
           <span>
             <strong>{r.nome_gruppo}</strong> — {r.numero_richiesto} persone
-            {r.email_contatto ? ` · richiesta inviata a ${r.email_contatto}` : ' · nessuna email inviata'}
+            {r.email_contatto ? ` · ${r.email_contatto}` : ' · nessuna email, va comunicato a mano'}
           </span>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span className={`badge ${r.stato === 'completata' ? 'disponibile' : 'in_attesa'}`}>
-              {r.stato === 'completata' ? 'Completata' : 'In attesa nomi'}
+            <span className={`badge ${r.stato === 'confermata' ? 'disponibile' : r.stato === 'rifiutata' ? 'non_disponibile' : 'in_attesa'}`}>
+              {ETICHETTE_STATO_GRUPPO[r.stato] || r.stato}
             </span>
-            {r.stato !== 'completata' && (
-              <button className="secondary" onClick={() => onCompleta(r.id)}>Segna completata</button>
-            )}
             <button className="danger" onClick={() => onElimina(r.id)}>Elimina</button>
           </div>
         </div>
@@ -436,20 +437,26 @@ function GruppiEsterniCard({ richieste, suggerimenti, onCrea, onCompleta, onElim
           <input type="number" min="1" placeholder="Numero persone" value={numeroRichiesto}
             onChange={e => setNumeroRichiesto(e.target.value)} style={{ marginBottom: 0, maxWidth: 140 }} />
         </div>
-        <input type="email" placeholder="Email contatto gruppo (opzionale)" value={emailContatto}
-          onChange={e => setEmailContatto(e.target.value)} />
-        <button type="submit" disabled={invio}>{invio ? 'Invio...' : 'Richiedi personale'}</button>
+        <div className="row">
+          <input type="email" placeholder="Email contatto gruppo (opzionale)" value={emailContatto}
+            onChange={e => setEmailContatto(e.target.value)} style={{ marginBottom: 0 }} />
+          <select value={puntoRitrovo} onChange={e => setPuntoRitrovo(e.target.value)} style={{ marginBottom: 0 }}>
+            <option value="sede">Ritrovo in sede</option>
+            <option value="location">Ritrovo in location</option>
+          </select>
+        </div>
+        <button type="submit" disabled={invio}>{invio ? 'Salvo...' : 'Aggiungi richiesta'}</button>
       </form>
     </div>
   );
 }
 
-function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onAggiungiMembriMultipli, onAggiungiPersonaGruppo, suggerimentiGruppi, onInviaRichieste, onConfermaEInvia, onRimuovi }) {
+function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onAggiungiMembriMultipli, onAggiungiPersonaGruppo, suggerimentiGruppi, onConfermaEInvia, onRimuovi }) {
   const [selezionati, setSelezionati] = useState([]);
   const [gruppo, setGruppo] = useState('');
+  const [puntoRitrovo, setPuntoRitrovo] = useState('sede');
 
   const tuttiDisponibili = squadra.membri.length > 0 && squadra.membri.every(m => m.stato_disponibilita === 'disponibile');
-  const cePersoneDaContattare = squadra.membri.some(m => m.stato_disponibilita === 'da_contattare');
 
   // Chi è già in squadra non compare più tra le opzioni selezionabili
   const idsGiaAggiunti = new Set(squadra.membri.map(m => m.lavoratore_id));
@@ -460,7 +467,7 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
   }
 
   async function confermaAggiunta() {
-    await onAggiungiMembriMultipli(squadra.id, selezionati, gruppo);
+    await onAggiungiMembriMultipli(squadra.id, selezionati, gruppo, puntoRitrovo);
     setSelezionati([]);
     setGruppo('');
   }
@@ -474,13 +481,19 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
 
       {squadra.membri.map(m => (
         <div key={m.id} className="row" style={{ padding: '6px 0', borderBottom: '1px solid #eee' }}>
-          <span>{m.nome} {m.cognome} {m.ruolo_specifico ? `— ${m.ruolo_specifico}` : ''} <em style={{ color: '#999' }}>({m.mansione})</em>{m.gruppo ? <em style={{ color: 'var(--oro-scuro)' }}> · {m.gruppo}</em> : ''}</span>
+          <span>{m.nome} {m.cognome} {m.ruolo_specifico ? `— ${m.ruolo_specifico}` : ''} <em style={{ color: '#999' }}>({m.mansione})</em>{m.gruppo ? <em style={{ color: 'var(--oro-scuro)' }}> · {m.gruppo}</em> : ''} <em style={{ color: '#999', fontSize: 12 }}> · ritrovo {m.punto_ritrovo === 'location' ? 'in location' : 'in sede'}</em></span>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span className={`badge ${m.stato_disponibilita}`}>{ETICHETTE_STATO[m.stato_disponibilita]}</span>
             {puoModificare && <button className="danger" onClick={() => onRimuovi(m.id)}>Rimuovi</button>}
           </div>
         </div>
       ))}
+
+      {squadra.membri.some(m => m.stato_disponibilita === 'da_contattare') && (
+        <p style={{ fontSize: 13, color: '#8B5E3C', marginTop: 8 }}>
+          Le richieste di disponibilità non si mandano più da qui: usa il pulsante "Richiedi disponibilità" nella vista settimanale degli eventi.
+        </p>
+      )}
 
       {puoModificare && (
         <>
@@ -500,7 +513,11 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
               )}
             </div>
             <input placeholder="Nome gruppo esterno (opzionale, es. Gruppo Aemme, Gruppo Samy)" value={gruppo}
-              onChange={e => setGruppo(e.target.value)} style={{ marginTop: 8, marginBottom: 0 }} />
+              onChange={e => setGruppo(e.target.value)} style={{ marginTop: 8 }} />
+            <select value={puntoRitrovo} onChange={e => setPuntoRitrovo(e.target.value)} style={{ marginBottom: 0 }}>
+              <option value="sede">Ritrovo in sede</option>
+              <option value="location">Ritrovo in location</option>
+            </select>
             <div className="row" style={{ marginTop: 10 }}>
               <span style={{ fontSize: 13, color: '#8B5E3C' }}>
                 {selezionati.length} selezionat{selezionati.length === 1 ? 'o' : 'i'}
@@ -514,9 +531,6 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
           <PersonaGruppoForm squadraId={squadra.id} suggerimentiGruppi={suggerimentiGruppi} onAggiungiLista={onAggiungiPersonaGruppo} />
 
           <div className="row" style={{ marginTop: 12 }}>
-            <button className="secondary" disabled={!cePersoneDaContattare} onClick={() => onInviaRichieste(squadra.id)}>
-              Invia richieste disponibilità
-            </button>
             <button disabled={!tuttiDisponibili} onClick={() => onConfermaEInvia(squadra.id)}>
               Conferma e invia al cliente
             </button>
@@ -530,6 +544,7 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
 function PersonaGruppoForm({ squadraId, suggerimentiGruppi, onAggiungiLista }) {
   const [gruppo, setGruppo] = useState('');
   const [testoLista, setTestoLista] = useState('');
+  const [puntoRitrovo, setPuntoRitrovo] = useState('sede');
   const [invio, setInvio] = useState(false);
 
   const nomiValidi = testoLista.split('\n').map(r => r.trim()).filter(r => r.length > 0);
@@ -538,7 +553,7 @@ function PersonaGruppoForm({ squadraId, suggerimentiGruppi, onAggiungiLista }) {
     e.preventDefault();
     if (nomiValidi.length === 0) return;
     setInvio(true);
-    await onAggiungiLista(squadraId, testoLista, gruppo);
+    await onAggiungiLista(squadraId, testoLista, gruppo, puntoRitrovo);
     setInvio(false);
     setTestoLista('');
   }
@@ -553,6 +568,10 @@ function PersonaGruppoForm({ squadraId, suggerimentiGruppi, onAggiungiLista }) {
       <datalist id="suggerimenti-gruppi-persona">
         {suggerimentiGruppi.map(g => <option key={g} value={g} />)}
       </datalist>
+      <select value={puntoRitrovo} onChange={e => setPuntoRitrovo(e.target.value)}>
+        <option value="sede">Ritrovo in sede</option>
+        <option value="location">Ritrovo in location</option>
+      </select>
       <textarea
         placeholder={'Mario Rossi\nLuigi Bianchi\nAnna Verdi'}
         value={testoLista}

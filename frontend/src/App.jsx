@@ -6,6 +6,7 @@ import AllegatiEvento from './pages/AllegatiEvento.jsx';
 import Anagrafica from './pages/Anagrafica.jsx';
 import Cestino from './pages/Cestino.jsx';
 import RispostaDisponibilita from './pages/RispostaDisponibilita.jsx';
+import GruppoRisposta from './pages/GruppoRisposta.jsx';
 import { haAccessoCompleto } from './ruoli.js';
 
 function RottaProtetta({ children }) {
@@ -51,6 +52,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/disponibilita/:token" element={<RispostaDisponibilita />} />
+        <Route path="/gruppo-risposta/:token" element={<GruppoRisposta />} />
         <Route path="/eventi" element={<RottaProtetta><Eventi /></RottaProtetta>} />
         <Route path="/eventi/:id" element={<RottaProtetta><EventoDetail /></RottaProtetta>} />
         <Route path="/eventi/:id/allegati" element={<RottaProtetta><AllegatiEvento /></RottaProtetta>} />

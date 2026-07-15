@@ -33,6 +33,14 @@ Nella scheda di ogni evento (e già in fase di creazione) si possono caricare fi
 
 Il PDF "scheda servizio" incorpora automaticamente immagini e PDF allegati come pagine aggiuntive; altri formati (es. Word, Excel) restano elencati per nome e scaricabili singolarmente dall'app.
 
+## Richiesta disponibilità settimanale
+
+Le email di richiesta disponibilità (sia ai lavoratori singoli sia ai gruppi esterni) non partono più subito quando aggiungi qualcuno a una squadra o crei una richiesta gruppo: restano "in attesa" finché l'HR Manager non lancia l'invio.
+
+Nella pagina Eventi, gli eventi futuri sono raggruppati per settimana (lunedì-domenica). In fondo a ogni settimana c'è un pulsante **"Richiedi disponibilità"**: un click manda **una sola email per persona/gruppo**, con tutti i loro eventi di quella settimana elencati (data, orario e punto di ritrovo — sede o location —, location dell'evento), ciascuno con il proprio link di conferma indipendente.
+
+Quando aggiungi qualcuno a una squadra, scegli anche il suo **punto di ritrovo** (sede o location): determina quale orario dell'evento (partenza sede / ritrovo location) compare nella sua email.
+
 ## Setup Database (Neon o altro Postgres)
 
 1. Crea un progetto su [neon.tech](https://neon.tech) (o riusa quello esistente, creando

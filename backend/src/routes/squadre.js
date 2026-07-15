@@ -26,17 +26,18 @@ router.post('/', soloResponsabile, async (req, res) => {
 // direttamente, saltando il giro dell'email.
 router.post('/:squadraId/membri', soloResponsabile, async (req, res) => {
   const { squadraId } = req.params;
-  const { lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita } = req.body;
+  const { lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita, punto_ritrovo } = req.body;
   if (!lavoratore_id) return res.status(400).json({ errore: 'lavoratore_id richiesto' });
 
   const statoIniziale = stato_disponibilita === 'disponibile' ? 'disponibile' : 'da_contattare';
+  const ritrovo = punto_ritrovo === 'location' ? 'location' : 'sede';
 
   const { rows } = await query(
-    `INSERT INTO squadra_membri (squadra_id, lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita)
-     VALUES ($1,$2,$3,$4,$5)
-     ON CONFLICT (squadra_id, lavoratore_id) DO UPDATE SET ruolo_specifico = EXCLUDED.ruolo_specifico, gruppo = EXCLUDED.gruppo, stato_disponibilita = EXCLUDED.stato_disponibilita
+    `INSERT INTO squadra_membri (squadra_id, lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita, punto_ritrovo)
+     VALUES ($1,$2,$3,$4,$5,$6)
+     ON CONFLICT (squadra_id, lavoratore_id) DO UPDATE SET ruolo_specifico = EXCLUDED.ruolo_specifico, gruppo = EXCLUDED.gruppo, stato_disponibilita = EXCLUDED.stato_disponibilita, punto_ritrovo = EXCLUDED.punto_ritrovo
      RETURNING *`,
-    [squadraId, lavoratore_id, ruolo_specifico, gruppo || null, statoIniziale]
+    [squadraId, lavoratore_id, ruolo_specifico, gruppo || null, statoIniziale, ritrovo]
   );
   res.status(201).json(rows[0]);
 });

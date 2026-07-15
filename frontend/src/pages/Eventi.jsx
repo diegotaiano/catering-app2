@@ -18,6 +18,8 @@ export default function Eventi() {
   const [fileSelezionati, setFileSelezionati] = useState([]);
   const [errore, setErrore] = useState(null);
   const [annoAperto, setAnnoAperto] = useState(null);
+  const [invioSettimana, setInvioSettimana] = useState(null); // lunedì (stringa) in corso di invio
+  const [messaggioSettimana, setMessaggioSettimana] = useState(null);
   const utente = JSON.parse(localStorage.getItem('utente') || 'null');
   const puoCreare = haAccessoCompleto(utente);
 
@@ -60,6 +62,22 @@ export default function Eventi() {
       carica();
     } catch (err) {
       setErrore(err.message);
+    }
+  }
+
+  async function handleRichiediDisponibilitaSettimana(lunedi) {
+    setInvioSettimana(lunedi);
+    setMessaggioSettimana(null);
+    try {
+      const res = await api.richiediDisponibilitaSettimana(lunedi);
+      setMessaggioSettimana(
+        `Inviate ${res.email_lavoratori_inviate} email a lavoratori e ${res.email_gruppi_inviate} email a gruppi esterni per questa settimana.`
+      );
+      carica();
+    } catch (err) {
+      setMessaggioSettimana(`Errore: ${err.message}`);
+    } finally {
+      setInvioSettimana(null);
     }
   }
 
@@ -181,6 +199,8 @@ export default function Eventi() {
         </div>
       )}
 
+      {messaggioSettimana && <div className="card" style={{ background: '#fdf1d6' }}>{messaggioSettimana}</div>}
+
       {(() => {
         const oggi = new Date(); oggi.setHours(0, 0, 0, 0);
         const futuri = eventi.filter(ev => new Date(ev.data_evento) >= oggi)
@@ -196,9 +216,52 @@ export default function Eventi() {
         });
         const anni = Object.keys(passatiPerAnno).sort((a, b) => b - a);
 
+        // Raggruppo i futuri per settimana (lunedì-domenica)
+        function lunediDellaSettimana(dataStr) {
+          const d = new Date(dataStr);
+          const giorno = d.getDay(); // 0 = domenica
+          const diff = giorno === 0 ? -6 : 1 - giorno;
+          d.setDate(d.getDate() + diff);
+          d.setHours(0, 0, 0, 0);
+          return d;
+        }
+        function formatoData(d) { return d.toISOString().slice(0, 10); }
+
+        const settimane = new Map();
+        futuri.forEach(ev => {
+          const lunedi = formatoData(lunediDellaSettimana(ev.data_evento));
+          if (!settimane.has(lunedi)) settimane.set(lunedi, []);
+          settimane.get(lunedi).push(ev);
+        });
+        const chiaviSettimane = [...settimane.keys()].sort();
+
         return (
           <>
-            {futuri.map(ev => <CardEvento key={ev.id} ev={ev} />)}
+            {chiaviSettimane.map(lunedi => {
+              const domenica = new Date(lunedi);
+              domenica.setDate(domenica.getDate() + 6);
+              const eventiSettimana = settimane.get(lunedi);
+
+              return (
+                <div key={lunedi} style={{ marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 16, color: '#8B5E3C', borderBottom: '1px solid #e0d6bd', paddingBottom: 6 }}>
+                    Settimana {new Date(lunedi).toLocaleDateString('it-IT')} – {domenica.toLocaleDateString('it-IT')}
+                  </h3>
+                  {eventiSettimana.map(ev => <CardEvento key={ev.id} ev={ev} />)}
+                  {puoCreare && (
+                    <div className="row" style={{ justifyContent: 'flex-end', marginTop: 4 }}>
+                      <button
+                        className="secondary"
+                        disabled={invioSettimana === lunedi}
+                        onClick={() => handleRichiediDisponibilitaSettimana(lunedi)}
+                      >
+                        {invioSettimana === lunedi ? 'Invio in corso...' : 'Richiedi disponibilità'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             {futuri.length === 0 && passati.length === 0 && <p>Nessun evento ancora creato.</p>}
 
             {anni.length > 0 && (

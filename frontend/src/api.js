@@ -97,8 +97,8 @@ export const api = {
   creaUtente: (dati) => request('/utenti', { method: 'POST', body: dati }),
   aggiornaUtente: (id, dati) => request(`/utenti/${id}`, { method: 'PUT', body: dati }),
   creaSquadra: (evento_id, nome) => request('/squadre', { method: 'POST', body: { evento_id, nome } }),
-  aggiungiMembro: (squadraId, lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita) =>
-    request(`/squadre/${squadraId}/membri`, { method: 'POST', body: { lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita } }),
+  aggiungiMembro: (squadraId, lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita, punto_ritrovo) =>
+    request(`/squadre/${squadraId}/membri`, { method: 'POST', body: { lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita, punto_ritrovo } }),
   rimuoviMembro: (membroId) => request(`/squadre/membri/${membroId}`, { method: 'DELETE' }),
   inviaRichieste: (squadraId) => request(`/squadre/${squadraId}/invia-richieste`, { method: 'POST' }),
   confermaEInvia: (squadraId) => request(`/squadre/${squadraId}/conferma-e-invia-cliente`, { method: 'POST' }),
@@ -110,6 +110,10 @@ export const api = {
   eliminaRichiestaGruppo: (eventoId, richiestaId) => request(`/eventi/${eventoId}/gruppi/${richiestaId}`, { method: 'DELETE' }),
   getSuggerimentiGruppi: () => request('/lavoratori/gruppi/suggerimenti'),
   getPersoneGruppo: (nomeGruppo) => request(`/lavoratori/gruppi/${encodeURIComponent(nomeGruppo)}/persone`),
+  richiediDisponibilitaSettimana: (inizio) => request('/settimana/richiedi-disponibilita', { method: 'POST', body: { inizio } }),
+  // Pubbliche (magic link) — risposta gruppi esterni
+  getRichiestaGruppo: (token) => request(`/gruppo-risposta/${token}`, { auth: false }),
+  rispondiGruppo: (token, confermato) => request(`/gruppo-risposta/${token}/rispondi`, { method: 'POST', body: { confermato }, auth: false }),
   // Pubbliche (magic link)
   getRichiestaDisponibilita: (token) => request(`/disponibilita/${token}`, { auth: false }),
   rispondiDisponibilita: (token, disponibile, note) =>

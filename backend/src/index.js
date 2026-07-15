@@ -14,6 +14,8 @@ import pdfRoutes from './routes/pdf.js';
 import utentiRoutes from './routes/utenti.js';
 import allegatiRoutes from './routes/allegati.js';
 import gruppiRoutes from './routes/gruppi.js';
+import settimanaRoutes from './routes/settimana.js';
+import gruppoRispostaRoutes from './routes/gruppo-risposta.js';
 
 const app = express();
 app.use(cors());
@@ -23,6 +25,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/eventi', eventiRoutes);
 app.use('/api/squadre', squadreRoutes);
 app.use('/api/disponibilita', disponibilitaRoutes); // pubblico, nessun auth
+app.use('/api/gruppo-risposta', gruppoRispostaRoutes); // pubblico, nessun auth
 app.use('/api/lavoratori', lavoratoriRoutes);
 app.use('/api/referenti', referentiRoutes);
 app.use('/api/furgoni', furgoniRoutes);
@@ -30,6 +33,7 @@ app.use('/api/eventi', pdfRoutes);
 app.use('/api/utenti', utentiRoutes);
 app.use('/api/eventi', allegatiRoutes);
 app.use('/api/eventi', gruppiRoutes);
+app.use('/api/settimana', settimanaRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

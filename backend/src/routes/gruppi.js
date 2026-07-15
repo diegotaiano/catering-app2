@@ -2,7 +2,6 @@ import express from 'express';
 import { query } from '../db.js';
 import { richiediAuth } from '../middleware/auth.js';
 import { richiediRuolo, ACCESSO_COMPLETO } from '../middleware/ruoli.js';
-import { inviaRichiestaGruppo } from '../utils/email.js';
 
 const router = express.Router();
 router.use(richiediAuth);
@@ -33,9 +32,10 @@ router.get('/:id/gruppi', async (req, res) => {
   res.json(rows);
 });
 
-// Crea una richiesta numerica a un gruppo esterno e manda la email (se c'è un contatto)
+// Crea una richiesta numerica a un gruppo esterno. Non manda email subito:
+// resta in coda finché l'HR Manager non lancia l'invio settimanale.
 router.post('/:id/gruppi', soloResponsabile, async (req, res) => {
-  const { nome_gruppo, numero_richiesto, email_contatto } = req.body;
+  const { nome_gruppo, numero_richiesto, email_contatto, punto_ritrovo } = req.body;
   if (!nome_gruppo || !numero_richiesto) {
     return res.status(400).json({ errore: 'nome_gruppo e numero_richiesto sono richiesti' });
   }
@@ -44,25 +44,10 @@ router.post('/:id/gruppi', soloResponsabile, async (req, res) => {
   if (!autorizzato || !evento) return res.status(404).json({ errore: 'Evento non trovato' });
 
   const { rows } = await query(
-    `INSERT INTO richieste_gruppo (evento_id, nome_gruppo, numero_richiesto, email_contatto, creato_da)
-     VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-    [req.params.id, nome_gruppo, numero_richiesto, email_contatto || null, req.utente.id]
+    `INSERT INTO richieste_gruppo (evento_id, nome_gruppo, numero_richiesto, email_contatto, punto_ritrovo, creato_da)
+     VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+    [req.params.id, nome_gruppo, numero_richiesto, email_contatto || null, punto_ritrovo === 'location' ? 'location' : 'sede', req.utente.id]
   );
-
-  if (email_contatto) {
-    try {
-      await inviaRichiestaGruppo({
-        to: email_contatto,
-        nomeGruppo: nome_gruppo,
-        numeroRichiesto: numero_richiesto,
-        nomeEvento: evento.nome,
-        dataEvento: evento.data_evento,
-        luogo: evento.luogo
-      });
-    } catch (err) {
-      console.error('Errore invio email richiesta gruppo:', err.message);
-    }
-  }
 
   res.status(201).json(rows[0]);
 });

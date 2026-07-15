@@ -79,6 +79,7 @@ router.get('/:id', async (req, res) => {
            'nome', l.nome, 'cognome', l.cognome, 'mansione', l.mansione,
            'ruolo_specifico', sm.ruolo_specifico,
            'gruppo', sm.gruppo,
+           'punto_ritrovo', sm.punto_ritrovo,
            'stato_disponibilita', sm.stato_disponibilita,
            'email_inviata_il', sm.email_inviata_il,
            'risposta_il', sm.risposta_il
