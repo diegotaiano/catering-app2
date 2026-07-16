@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { haAccessoCompleto } from '../ruoli.js';
+import CampoIndirizzo from '../components/CampoIndirizzo.jsx';
 
 const ETICHETTE_STATO = {
   da_contattare: 'Da contattare',
@@ -63,7 +64,7 @@ export default function EventoDetail() {
         data_evento: ev.data_evento?.slice(0, 10) || '',
         ora_partenza_sede: ev.ora_partenza_sede || '', ora_ritrovo_location: ev.ora_ritrovo_location || '',
         ora_inizio: ev.ora_inizio || '', ora_fine: ev.ora_fine || '',
-        luogo: ev.luogo || '', numero_ospiti_adulti: ev.numero_ospiti_adulti || '', numero_bambini: ev.numero_bambini || '', numero_staff: ev.numero_staff || '',
+        luogo: ev.luogo || '', luogo_url: ev.luogo_url || '', numero_ospiti_adulti: ev.numero_ospiti_adulti || '', numero_bambini: ev.numero_bambini || '', numero_staff: ev.numero_staff || '',
         referente_commerciale_id: ev.referente_commerciale_id || '', capo_servizio_id: ev.capo_servizio_id || '', note: ev.note || ''
       });
     }
@@ -136,6 +137,14 @@ export default function EventoDetail() {
     }
   }
 
+  async function handleVisualizzaPdf() {
+    try {
+      await api.visualizzaPdfEvento(id);
+    } catch (err) {
+      setMessaggio(`Errore: ${err.message}`);
+    }
+  }
+
   async function handleCreaRichiestaGruppo(dati) {
     try {
       await api.creaRichiestaGruppo(id, dati);
@@ -145,11 +154,6 @@ export default function EventoDetail() {
       setMessaggio(`Errore: ${err.message}`);
       return false;
     }
-  }
-
-  async function handleCompletaRichiestaGruppo(richiestaId) {
-    await api.aggiornaRichiestaGruppo(id, richiestaId, { stato: 'completata' });
-    carica();
   }
 
   async function handleEliminaRichiestaGruppo(richiestaId) {
@@ -214,7 +218,9 @@ export default function EventoDetail() {
         <div>
           <h1 style={{ marginBottom: 4 }}>{evento.nome}</h1>
           <p style={{ color: '#8B5E3C', margin: 0 }}>
-            {new Date(evento.data_evento).toLocaleDateString('it-IT')} · {evento.luogo || 'luogo da definire'} · {evento.numero_ospiti_adulti || 0} adulti, {evento.numero_bambini || 0} bambini, {evento.numero_staff || 0} staff
+            {new Date(evento.data_evento).toLocaleDateString('it-IT')} · {evento.luogo_url ? (
+              <a href={evento.luogo_url} target="_blank" rel="noreferrer" style={{ color: 'var(--oro-scuro)' }}>{evento.luogo}</a>
+            ) : (evento.luogo || 'luogo da definire')} · {evento.numero_ospiti_adulti || 0} adulti, {evento.numero_bambini || 0} bambini, {evento.numero_staff || 0} staff
             {evento.referente_nome ? ` · Referente: ${evento.referente_nome} ${evento.referente_cognome}` : ' · Nessun referente assegnato'}
           </p>
           <div style={{ marginTop: 8 }}>
@@ -223,7 +229,8 @@ export default function EventoDetail() {
             </span>
           </div>
         </div>
-        <button className="secondary" onClick={handleScaricaPdf}>Scarica PDF scheda servizio</button>
+        <button className="secondary" onClick={handleVisualizzaPdf}>Visualizza PDF scheda servizio</button>
+        {puoModificare && <button className="secondary" onClick={handleScaricaPdf}>Scarica PDF scheda servizio</button>}
         {puoModificare && (
           <button className="secondary" onClick={() => setModificaAperta(!modificaAperta)}>
             {modificaAperta ? 'Annulla' : 'Modifica evento'}
@@ -275,8 +282,8 @@ export default function EventoDetail() {
                   onChange={e => setFormEvento({ ...formEvento, ora_fine: e.target.value })} />
               </div>
             </div>
-            <input placeholder="Luogo" value={formEvento.luogo}
-              onChange={e => setFormEvento({ ...formEvento, luogo: e.target.value })} />
+            <CampoIndirizzo value={formEvento.luogo} linkAttuale={formEvento.luogo_url}
+              onChange={(val, url) => setFormEvento({ ...formEvento, luogo: val, luogo_url: url })} />
             <label style={{ fontSize: 13, color: '#8B5E3C' }}>Numero presenti</label>
             <div className="row">
               <input type="number" min="0" placeholder="Ospiti adulti" value={formEvento.numero_ospiti_adulti}
@@ -356,9 +363,11 @@ export default function EventoDetail() {
         <GruppiEsterniCard
           richieste={gruppiRichieste}
           suggerimenti={suggerimentiGruppi}
+          membriSquadra={evento.squadre[0]?.membri || []}
+          squadraId={evento.squadre[0]?.id}
           onCrea={handleCreaRichiestaGruppo}
-          onCompleta={handleCompletaRichiestaGruppo}
           onElimina={handleEliminaRichiestaGruppo}
+          onAggiungiLista={handleAggiungiListaGruppo}
         />
       )}
 
@@ -368,10 +377,9 @@ export default function EventoDetail() {
           squadra={sq}
           lavoratori={lavoratori}
           puoModificare={puoModificare}
+          gruppiRichieste={gruppiRichieste}
           onAggiungiMembro={handleAggiungiMembro}
           onAggiungiMembriMultipli={handleAggiungiMembriMultipli}
-          onAggiungiPersonaGruppo={handleAggiungiListaGruppo}
-          suggerimentiGruppi={suggerimentiGruppi}
           onConfermaEInvia={handleConfermaEInvia}
           onRimuovi={async (membroId) => { await api.rimuoviMembro(membroId); carica(); }}
         />
@@ -380,12 +388,15 @@ export default function EventoDetail() {
   );
 }
 
-function GruppiEsterniCard({ richieste, suggerimenti, onCrea, onCompleta, onElimina }) {
+function GruppiEsterniCard({ richieste, suggerimenti, membriSquadra, squadraId, onCrea, onElimina, onAggiungiLista }) {
   const [nomeGruppo, setNomeGruppo] = useState('');
   const [numeroRichiesto, setNumeroRichiesto] = useState('');
   const [emailContatto, setEmailContatto] = useState('');
   const [puntoRitrovo, setPuntoRitrovo] = useState('sede');
   const [invio, setInvio] = useState(false);
+  const [richiestaApertaId, setRichiestaApertaId] = useState(null);
+  const [testoLista, setTestoLista] = useState('');
+  const [invioLista, setInvioLista] = useState(false);
 
   const ETICHETTE_STATO_GRUPPO = {
     in_attesa_invio: 'In attesa di invio',
@@ -406,25 +417,62 @@ function GruppiEsterniCard({ richieste, suggerimenti, onCrea, onCompleta, onElim
     if (ok) { setNomeGruppo(''); setNumeroRichiesto(''); setEmailContatto(''); }
   }
 
+  function contaNominativi(nomeGruppoRichiesta) {
+    return membriSquadra.filter(m => m.gruppo === nomeGruppoRichiesta).length;
+  }
+
+  async function handleSubmitLista(richiesta) {
+    const nomiValidi = testoLista.split('\n').map(r => r.trim()).filter(r => r.length > 0);
+    if (nomiValidi.length === 0) return;
+    setInvioLista(true);
+    await onAggiungiLista(squadraId, testoLista, richiesta.nome_gruppo, richiesta.punto_ritrovo);
+    setInvioLista(false);
+    setTestoLista('');
+    setRichiestaApertaId(null);
+  }
+
   return (
     <div className="card">
       <h3>Gruppi esterni</h3>
       <p style={{ fontSize: 13, color: '#8B5E3C', marginTop: -8 }}>
-        Segna quante persone ti servono da un gruppo esterno. La email parte con il comando "Richiedi disponibilità" nella vista settimanale, insieme a tutte le altre richieste della settimana.
+        Segna quante persone ti servono da un gruppo esterno. La email parte con il comando "Richiedi disponibilità" nella vista settimanale. Quando ti rispondono con i nominativi, incollali qui sotto sulla stessa richiesta.
       </p>
 
       {richieste.map(r => (
-        <div key={r.id} className="row" style={{ padding: '6px 0', borderBottom: '1px solid #eee' }}>
-          <span>
-            <strong>{r.nome_gruppo}</strong> — {r.numero_richiesto} persone
-            {r.email_contatto ? ` · ${r.email_contatto}` : ' · nessuna email, va comunicato a mano'}
-          </span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span className={`badge ${r.stato === 'confermata' ? 'disponibile' : r.stato === 'rifiutata' ? 'non_disponibile' : 'in_attesa'}`}>
-              {ETICHETTE_STATO_GRUPPO[r.stato] || r.stato}
+        <div key={r.id} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+          <div className="row">
+            <span>
+              <strong>{r.nome_gruppo}</strong> — {contaNominativi(r.nome_gruppo)}/{r.numero_richiesto} persone inserite
+              {r.email_contatto ? ` · ${r.email_contatto}` : ' · nessuna email, va comunicato a mano'}
+              {' · ritrovo ' + (r.punto_ritrovo === 'location' ? 'in location' : 'in sede')}
             </span>
-            <button className="danger" onClick={() => onElimina(r.id)}>Elimina</button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span className={`badge ${r.stato === 'confermata' ? 'disponibile' : r.stato === 'rifiutata' ? 'non_disponibile' : 'in_attesa'}`}>
+                {ETICHETTE_STATO_GRUPPO[r.stato] || r.stato}
+              </span>
+              <button className="secondary" onClick={() => { setRichiestaApertaId(richiestaApertaId === r.id ? null : r.id); setTestoLista(''); }}>
+                {richiestaApertaId === r.id ? 'Annulla' : 'Aggiungi nominativi'}
+              </button>
+              <button className="danger" onClick={() => onElimina(r.id)}>Elimina</button>
+            </div>
           </div>
+
+          {richiestaApertaId === r.id && (
+            <div style={{ marginTop: 10, paddingLeft: 4 }}>
+              <p style={{ fontSize: 13, color: '#8B5E3C', margin: '0 0 6px' }}>
+                Incolla qui i nominativi che ti manda {r.nome_gruppo} (un nome e cognome per riga) — risultano subito disponibili, senza email di richiesta:
+              </p>
+              <textarea
+                placeholder={'Mario Rossi\nLuigi Bianchi\nAnna Verdi'}
+                value={testoLista}
+                onChange={e => setTestoLista(e.target.value)}
+                rows={4}
+              />
+              <button className="secondary" disabled={invioLista || testoLista.trim().length === 0} onClick={() => handleSubmitLista(r)}>
+                {invioLista ? 'Aggiungo...' : 'Aggiungi lista'}
+              </button>
+            </div>
+          )}
         </div>
       ))}
 
@@ -452,10 +500,8 @@ function GruppiEsterniCard({ richieste, suggerimenti, onCrea, onCompleta, onElim
   );
 }
 
-function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onAggiungiMembriMultipli, onAggiungiPersonaGruppo, suggerimentiGruppi, onConfermaEInvia, onRimuovi }) {
+function SquadraCard({ squadra, lavoratori, puoModificare, gruppiRichieste, onAggiungiMembro, onAggiungiMembriMultipli, onConfermaEInvia, onRimuovi }) {
   const [selezionati, setSelezionati] = useState([]);
-  const [gruppo, setGruppo] = useState('');
-  const [puntoRitrovo, setPuntoRitrovo] = useState('sede');
 
   const tuttiDisponibili = squadra.membri.length > 0 && squadra.membri.every(m => m.stato_disponibilita === 'disponibile');
 
@@ -463,14 +509,22 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
   const idsGiaAggiunti = new Set(squadra.membri.map(m => m.lavoratore_id));
   const lavoratoriDisponibili = lavoratori.filter(l => !idsGiaAggiunti.has(l.id));
 
+  // Richieste gruppo con ancora persone mancanti: compaiono come promemoria in fondo
+  // alla lista, finché non vengono inserite tutte le persone richieste.
+  const placeholderGruppi = (gruppiRichieste || [])
+    .map(r => {
+      const giaInseriti = squadra.membri.filter(m => m.gruppo === r.nome_gruppo).length;
+      return { ...r, mancanti: r.numero_richiesto - giaInseriti };
+    })
+    .filter(r => r.mancanti > 0);
+
   function toggleSelezione(id) {
     setSelezionati(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }
 
   async function confermaAggiunta() {
-    await onAggiungiMembriMultipli(squadra.id, selezionati, gruppo, puntoRitrovo);
+    await onAggiungiMembriMultipli(squadra.id, selezionati, null, 'sede');
     setSelezionati([]);
-    setGruppo('');
   }
 
   return (
@@ -490,6 +544,13 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
         </div>
       ))}
 
+      {placeholderGruppi.map(r => (
+        <div key={`placeholder-${r.id}`} className="row" style={{ padding: '6px 0', borderBottom: '1px solid #eee', opacity: 0.7 }}>
+          <span><em>{r.nome_gruppo} — {r.mancanti} {r.mancanti === 1 ? 'persona' : 'persone'} ancora da confermare</em></span>
+          <span className="badge in_attesa">Da inserire</span>
+        </div>
+      ))}
+
       {squadra.membri.some(m => m.stato_disponibilita === 'da_contattare') && (
         <p style={{ fontSize: 13, color: '#8B5E3C', marginTop: 8 }}>
           Le richieste di disponibilità non si mandano più da qui: usa il pulsante "Richiedi disponibilità" nella vista settimanale degli eventi.
@@ -500,7 +561,7 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
         <>
           <div style={{ marginTop: 12 }}>
             <p style={{ fontSize: 13, color: '#8B5E3C', marginBottom: 6 }}>
-              Seleziona uno o più lavoratori da aggiungere:
+              Seleziona uno o più lavoratori dello staff fisso da aggiungere (per i gruppi esterni usa la sezione "Gruppi esterni" qui sopra):
             </p>
             <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #eee', borderRadius: 4, padding: 8 }}>
               {lavoratoriDisponibili.map(l => {
@@ -522,12 +583,6 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
                 <p style={{ fontSize: 13, color: '#8B5E3C', margin: 0 }}>Tutti i lavoratori disponibili sono già stati aggiunti.</p>
               )}
             </div>
-            <input placeholder="Nome gruppo esterno (opzionale, es. Gruppo Aemme, Gruppo Samy)" value={gruppo}
-              onChange={e => setGruppo(e.target.value)} style={{ marginTop: 8 }} />
-            <select value={puntoRitrovo} onChange={e => setPuntoRitrovo(e.target.value)} style={{ marginBottom: 0 }}>
-              <option value="sede">Ritrovo in sede</option>
-              <option value="location">Ritrovo in location</option>
-            </select>
             <div className="row" style={{ marginTop: 10 }}>
               <span style={{ fontSize: 13, color: '#8B5E3C' }}>
                 {selezionati.length} selezionat{selezionati.length === 1 ? 'o' : 'i'}
@@ -538,8 +593,6 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
             </div>
           </div>
 
-          <PersonaGruppoForm squadraId={squadra.id} suggerimentiGruppi={suggerimentiGruppi} onAggiungiLista={onAggiungiPersonaGruppo} />
-
           <div className="row" style={{ marginTop: 12 }}>
             <button disabled={!tuttiDisponibili} onClick={() => onConfermaEInvia(squadra.id)}>
               Conferma e invia al cliente
@@ -548,54 +601,5 @@ function SquadraCard({ squadra, lavoratori, puoModificare, onAggiungiMembro, onA
         </>
       )}
     </div>
-  );
-}
-
-function PersonaGruppoForm({ squadraId, suggerimentiGruppi, onAggiungiLista }) {
-  const [gruppo, setGruppo] = useState('');
-  const [testoLista, setTestoLista] = useState('');
-  const [puntoRitrovo, setPuntoRitrovo] = useState('sede');
-  const [invio, setInvio] = useState(false);
-
-  const nomiValidi = testoLista.split('\n').map(r => r.trim()).filter(r => r.length > 0);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (nomiValidi.length === 0) return;
-    setInvio(true);
-    await onAggiungiLista(squadraId, testoLista, gruppo, puntoRitrovo);
-    setInvio(false);
-    setTestoLista('');
-  }
-
-  return (
-    <form onSubmit={handleSubmit} style={{ marginTop: 16, borderTop: '1px solid #eee', paddingTop: 12 }}>
-      <p style={{ fontSize: 13, color: '#8B5E3C', marginTop: 0, marginBottom: 6 }}>
-        Incolla qui la lista che ti manda il gruppo esterno (un nome e cognome per riga) — risultano subito disponibili, senza email di richiesta:
-      </p>
-      <input list="suggerimenti-gruppi-persona" placeholder="Gruppo (es. Gruppo Samy)" value={gruppo}
-        onChange={e => setGruppo(e.target.value)} />
-      <datalist id="suggerimenti-gruppi-persona">
-        {suggerimentiGruppi.map(g => <option key={g} value={g} />)}
-      </datalist>
-      <select value={puntoRitrovo} onChange={e => setPuntoRitrovo(e.target.value)}>
-        <option value="sede">Ritrovo in sede</option>
-        <option value="location">Ritrovo in location</option>
-      </select>
-      <textarea
-        placeholder={'Mario Rossi\nLuigi Bianchi\nAnna Verdi'}
-        value={testoLista}
-        onChange={e => setTestoLista(e.target.value)}
-        rows={4}
-      />
-      <div className="row">
-        <span style={{ fontSize: 13, color: '#8B5E3C' }}>
-          {nomiValidi.length} nom{nomiValidi.length === 1 ? 'e' : 'i'} pront{nomiValidi.length === 1 ? 'o' : 'i'} da aggiungere
-        </span>
-        <button type="submit" className="secondary" disabled={invio || nomiValidi.length === 0}>
-          {invio ? 'Aggiungo...' : 'Aggiungi lista'}
-        </button>
-      </div>
-    </form>
   );
 }
