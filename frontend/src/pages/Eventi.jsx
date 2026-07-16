@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { haAccessoCompleto } from '../ruoli.js';
-import CampoIndirizzo from '../components/CampoIndirizzo.jsx';
 
 const VUOTO = {
   nome: '', brand: 'Lanzarotti1967', cliente: '', data_evento: '',
   ora_partenza_sede: '', ora_ritrovo_location: '', ora_inizio: '', ora_fine: '',
-  luogo: '', luogo_url: '', numero_ospiti_adulti: '', numero_bambini: '', numero_staff: '', referente_commerciale_id: '', capo_servizio_id: '', note: ''
+  luogo: '', numero_ospiti_adulti: '', numero_bambini: '', numero_staff: '', referente_commerciale_id: '', capo_servizio_id: '', note: ''
 };
 
 export default function Eventi() {
@@ -159,8 +158,8 @@ export default function Eventi() {
               </div>
             </div>
 
-            <CampoIndirizzo value={nuovoEvento.luogo} linkAttuale={nuovoEvento.luogo_url}
-              onChange={(val, url) => setNuovoEvento({ ...nuovoEvento, luogo: val, luogo_url: url })} />
+            <input placeholder="Luogo" value={nuovoEvento.luogo}
+              onChange={e => setNuovoEvento({ ...nuovoEvento, luogo: e.target.value })} />
 
             <label style={{ fontSize: 13, color: '#8B5E3C' }}>Numero presenti</label>
             <div className="row">
@@ -297,9 +296,7 @@ function CardEvento({ ev }) {
           <div>
             <h3 style={{ margin: 0 }}>{ev.nome}</h3>
             <p style={{ margin: '4px 0', color: '#8B5E3C' }}>
-              {new Date(ev.data_evento).toLocaleDateString('it-IT')} · {ev.luogo_url ? (
-                <a href={ev.luogo_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: 'var(--oro-scuro)' }}>{ev.luogo}</a>
-              ) : (ev.luogo || 'luogo da definire')}
+              {new Date(ev.data_evento).toLocaleDateString('it-IT')} · {ev.luogo || 'luogo da definire'}
               {ev.referente_nome ? ` · Referente: ${ev.referente_nome} ${ev.referente_cognome}` : ' · Nessun referente assegnato'}
             </p>
             <span className={`badge ${ev.capo_servizio_nome ? 'disponibile' : 'da_contattare'}`}>
