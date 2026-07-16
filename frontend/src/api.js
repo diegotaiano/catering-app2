@@ -93,6 +93,20 @@ export const api = {
     a.remove();
     window.URL.revokeObjectURL(url);
   },
+  // Apre il PDF in una nuova scheda per la consultazione: il visualizzatore del browser
+  // permette comunque di scaricarlo o stamparlo da lì, senza forzare subito il download.
+  visualizzaPdfEvento: async (eventoId) => {
+    const res = await fetch(`${API_URL}/eventi/${eventoId}/pdf`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    if (!res.ok) throw new Error('Impossibile generare il PDF');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const finestra = window.open(url, '_blank');
+    if (!finestra) throw new Error('Il browser ha bloccato l\'apertura della nuova scheda (popup). Consenti i popup per questo sito e riprova.');
+    // Non revoco subito l'URL: la nuova scheda deve poter continuare a leggerlo.
+    // Il browser lo libera comunque quando quella scheda viene chiusa.
+  },
   getUtenti: () => request('/utenti'),
   creaUtente: (dati) => request('/utenti', { method: 'POST', body: dati }),
   aggiornaUtente: (id, dati) => request(`/utenti/${id}`, { method: 'PUT', body: dati }),
