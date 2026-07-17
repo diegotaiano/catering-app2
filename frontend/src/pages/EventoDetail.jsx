@@ -536,7 +536,7 @@ function SquadraCard({ squadra, lavoratori, puoModificare, gruppiRichieste, onAg
 
       {squadra.membri.map(m => (
         <div key={m.id} className="row" style={{ padding: '6px 0', borderBottom: '1px solid #eee' }}>
-          <span>{m.nome} {m.cognome} {m.ruolo_specifico ? `— ${m.ruolo_specifico}` : ''} <em style={{ color: '#999' }}>({m.mansione})</em>{m.gruppo ? <em style={{ color: 'var(--oro-scuro)' }}> · {m.gruppo}</em> : ''} <em style={{ color: '#999', fontSize: 12 }}> · ritrovo {m.punto_ritrovo === 'location' ? 'in location' : 'in sede'}</em></span>
+          <span>{m.cognome} {m.nome} {m.ruolo_specifico ? `— ${m.ruolo_specifico}` : ''} <em style={{ color: '#999' }}>({m.mansione})</em>{m.gruppo ? <em style={{ color: 'var(--oro-scuro)' }}> · {m.gruppo}</em> : ''} <em style={{ color: '#999', fontSize: 12 }}> · ritrovo {m.punto_ritrovo === 'location' ? 'in location' : 'in sede'}</em></span>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span className={`badge ${m.stato_disponibilita}`}>{ETICHETTE_STATO[m.stato_disponibilita]}</span>
             {puoModificare && <button className="danger" onClick={() => onRimuovi(m.id)}>Rimuovi</button>}
@@ -570,7 +570,7 @@ function SquadraCard({ squadra, lavoratori, puoModificare, gruppiRichieste, onAg
                   <label key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: occupato ? 'not-allowed' : 'pointer', opacity: occupato ? 0.6 : 1 }}>
                     <input type="checkbox" checked={selezionati.includes(l.id)} disabled={occupato}
                       onChange={() => toggleSelezione(l.id)} style={{ width: 'auto', marginBottom: 0 }} />
-                    <span>{l.nome} {l.cognome} <em style={{ color: '#999' }}>({l.mansione})</em></span>
+                    <span>{l.cognome} {l.nome} <em style={{ color: '#999' }}>({l.mansione})</em></span>
                     {occupato && (
                       <span className="badge non_disponibile" style={{ fontSize: 11 }}>
                         Occupato su "{l.occupato_evento_nome}"

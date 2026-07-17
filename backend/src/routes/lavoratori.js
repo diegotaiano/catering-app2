@@ -8,7 +8,19 @@ router.use(richiediAuth);
 const soloResponsabile = richiediRuolo(ACCESSO_COMPLETO);
 
 router.get('/', async (req, res) => {
-  const { rows } = await query('SELECT * FROM lavoratori WHERE attivo = true ORDER BY cognome, nome');
+  const { rows } = await query(`
+    SELECT * FROM lavoratori WHERE attivo = true
+    ORDER BY
+      CASE
+        WHEN mansione ILIKE '%chef%' THEN 0
+        WHEN mansione ILIKE '%aiuto%' THEN 1
+        WHEN mansione ILIKE '%sbarazz%' THEN 2
+        WHEN mansione ILIKE '%capo serv%' THEN 3
+        WHEN mansione ILIKE '%camerier%' THEN 4
+        ELSE 5
+      END,
+      cognome, nome
+  `);
   res.json(rows);
 });
 
@@ -32,7 +44,16 @@ router.get('/disponibilita/:data', async (req, res) => {
        LIMIT 1
      ) oc ON true
      WHERE l.attivo = true
-     ORDER BY l.cognome, l.nome`,
+     ORDER BY
+       CASE
+         WHEN l.mansione ILIKE '%chef%' THEN 0
+         WHEN l.mansione ILIKE '%aiuto%' THEN 1
+         WHEN l.mansione ILIKE '%sbarazz%' THEN 2
+         WHEN l.mansione ILIKE '%capo serv%' THEN 3
+         WHEN l.mansione ILIKE '%camerier%' THEN 4
+         ELSE 5
+       END,
+       l.cognome, l.nome`,
     [data]
   );
   res.json(rows);
