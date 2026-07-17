@@ -28,6 +28,39 @@ export const api = {
   creaEvento: (dati) => request('/eventi', { method: 'POST', body: dati }),
   aggiornaEvento: (id, dati) => request(`/eventi/${id}`, { method: 'PUT', body: dati }),
   eliminaEvento: (id) => request(`/eventi/${id}`, { method: 'DELETE' }),
+  getEventiCestino: () => request('/eventi/cestino'),
+  ripristinaEvento: (id) => request(`/eventi/${id}/ripristina`, { method: 'POST' }),
+  eliminaDefinitivamente: (id) => request(`/eventi/${id}/definitivo`, { method: 'DELETE' }),
+  getAllegati: (eventoId) => request(`/eventi/${eventoId}/allegati`),
+  caricaAllegati: async (eventoId, files) => {
+    const formData = new FormData();
+    for (const file of files) formData.append('file', file);
+    const res = await fetch(`${API_URL}/eventi/${eventoId}/allegati`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${getToken()}` },
+      body: formData
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data?.errore || 'Errore nel caricamento');
+    return data;
+  },
+  eliminaAllegato: (eventoId, allegatoId) => request(`/eventi/${eventoId}/allegati/${allegatoId}`, { method: 'DELETE' }),
+  scaricaAllegato: async (eventoId, allegatoId, nomeFile) => {
+    const res = await fetch(`${API_URL}/eventi/${eventoId}/allegati/${allegatoId}`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    if (!res.ok) throw new Error('Impossibile scaricare il file');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.download = nomeFile || 'allegato';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
   getLavoratori: () => request('/lavoratori'),
   creaLavoratore: (dati) => request('/lavoratori', { method: 'POST', body: dati }),
   aggiornaLavoratore: (id, dati) => request(`/lavoratori/${id}`, { method: 'PUT', body: dati }),
@@ -44,30 +77,58 @@ export const api = {
   getFurgoniEvento: (eventoId) => request(`/furgoni/evento/${eventoId}`),
   assegnaFurgone: (furgone_id, evento_id) => request('/furgoni/assegna', { method: 'POST', body: { furgone_id, evento_id } }),
   rimuoviAssegnazioneFurgone: (assegnazioneId) => request(`/furgoni/assegnazioni/${assegnazioneId}`, { method: 'DELETE' }),
-  scaricaPdfEvento: async (eventoId) => {
+  scaricaPdfEvento: async (eventoId, nomeEvento) => {
     const res = await fetch(`${API_URL}/eventi/${eventoId}/pdf`, {
       headers: { Authorization: `Bearer ${getToken()}` }
     });
     if (!res.ok) throw new Error('Impossibile generare il PDF');
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
+    const nomeFile = (nomeEvento || `scheda-servizio-${eventoId}`).replace(/[\\/:*?"<>|]/g, '').trim();
     const a = document.createElement('a');
     a.href = url;
-    a.download = `scheda-servizio-${eventoId}.pdf`;
+    a.download = `${nomeFile || `scheda-servizio-${eventoId}`}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     window.URL.revokeObjectURL(url);
   },
+  // Apre il PDF in una nuova scheda per la consultazione: il visualizzatore del browser
+  // permette comunque di scaricarlo o stamparlo da lì, senza forzare subito il download.
+  visualizzaPdfEvento: async (eventoId) => {
+    const res = await fetch(`${API_URL}/eventi/${eventoId}/pdf`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    if (!res.ok) throw new Error('Impossibile generare il PDF');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const finestra = window.open(url, '_blank');
+    if (!finestra) throw new Error('Il browser ha bloccato l\'apertura della nuova scheda (popup). Consenti i popup per questo sito e riprova.');
+    // Non revoco subito l'URL: la nuova scheda deve poter continuare a leggerlo.
+    // Il browser lo libera comunque quando quella scheda viene chiusa.
+  },
   getUtenti: () => request('/utenti'),
   creaUtente: (dati) => request('/utenti', { method: 'POST', body: dati }),
   aggiornaUtente: (id, dati) => request(`/utenti/${id}`, { method: 'PUT', body: dati }),
   creaSquadra: (evento_id, nome) => request('/squadre', { method: 'POST', body: { evento_id, nome } }),
-  aggiungiMembro: (squadraId, lavoratore_id, ruolo_specifico) =>
-    request(`/squadre/${squadraId}/membri`, { method: 'POST', body: { lavoratore_id, ruolo_specifico } }),
+  aggiungiMembro: (squadraId, lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita, punto_ritrovo) =>
+    request(`/squadre/${squadraId}/membri`, { method: 'POST', body: { lavoratore_id, ruolo_specifico, gruppo, stato_disponibilita, punto_ritrovo } }),
   rimuoviMembro: (membroId) => request(`/squadre/membri/${membroId}`, { method: 'DELETE' }),
   inviaRichieste: (squadraId) => request(`/squadre/${squadraId}/invia-richieste`, { method: 'POST' }),
   confermaEInvia: (squadraId) => request(`/squadre/${squadraId}/conferma-e-invia-cliente`, { method: 'POST' }),
+  // Gruppi esterni (es. Gruppo Aemme, Gruppo Samy)
+  getGruppiEvento: (eventoId) => request(`/eventi/${eventoId}/gruppi`),
+  creaRichiestaGruppo: (eventoId, dati) => request(`/eventi/${eventoId}/gruppi`, { method: 'POST', body: dati }),
+  aggiornaRichiestaGruppo: (eventoId, richiestaId, dati) =>
+    request(`/eventi/${eventoId}/gruppi/${richiestaId}`, { method: 'PUT', body: dati }),
+  eliminaRichiestaGruppo: (eventoId, richiestaId) => request(`/eventi/${eventoId}/gruppi/${richiestaId}`, { method: 'DELETE' }),
+  getSuggerimentiGruppi: () => request('/lavoratori/gruppi/suggerimenti'),
+  getPersoneGruppo: (nomeGruppo) => request(`/lavoratori/gruppi/${encodeURIComponent(nomeGruppo)}/persone`),
+  getDisponibilitaLavoratori: (data) => request(`/lavoratori/disponibilita/${data}`),
+  richiediDisponibilitaSettimana: (inizio) => request('/settimana/richiedi-disponibilita', { method: 'POST', body: { inizio } }),
+  // Pubbliche (magic link) — risposta gruppi esterni
+  getRichiestaGruppo: (token) => request(`/gruppo-risposta/${token}`, { auth: false }),
+  rispondiGruppo: (token, confermato) => request(`/gruppo-risposta/${token}/rispondi`, { method: 'POST', body: { confermato }, auth: false }),
   // Pubbliche (magic link)
   getRichiestaDisponibilita: (token) => request(`/disponibilita/${token}`, { auth: false }),
   rispondiDisponibilita: (token, disponibile, note) =>

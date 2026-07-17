@@ -49,6 +49,9 @@ CREATE TABLE IF NOT EXISTS eventi (
   ora_inizio TIME,                       -- orario inizio servizio
   ora_fine TIME,                         -- orario fine servizio
   numero_ospiti INTEGER,
+  numero_ospiti_adulti INTEGER,
+  numero_bambini INTEGER,
+  numero_staff INTEGER,
   referente_commerciale_id INTEGER REFERENCES referenti_commerciali(id),
   responsabile_servizio_id INTEGER REFERENCES utenti(id),
   stato VARCHAR(30) NOT NULL DEFAULT 'in_organizzazione', -- in_organizzazione | confermato | concluso | annullato
@@ -74,6 +77,7 @@ CREATE TABLE IF NOT EXISTS squadra_membri (
   squadra_id INTEGER NOT NULL REFERENCES squadre(id) ON DELETE CASCADE,
   lavoratore_id INTEGER NOT NULL REFERENCES lavoratori(id),
   ruolo_specifico VARCHAR(100),         -- es. "Capo sala", "Cameriere", "Runner"
+  gruppo VARCHAR(100),                  -- es. "Gruppo Aemme", "Gruppo Samy" — gruppo esterno per questo evento (libero, non anagrafica)
   stato_disponibilita VARCHAR(30) NOT NULL DEFAULT 'da_contattare',
     -- da_contattare | in_attesa | disponibile | non_disponibile
   token_risposta VARCHAR(64) UNIQUE,    -- token magic-link
@@ -132,3 +136,63 @@ ALTER TABLE eventi ADD COLUMN IF NOT EXISTS capo_servizio_id INTEGER REFERENCES 
 -- in referenti_commerciali, cosi' il suo accesso si puo' filtrare sui soli eventi
 -- di cui e' il referente. Non utilizzato per gli altri ruoli.
 ALTER TABLE utenti ADD COLUMN IF NOT EXISTS referente_commerciale_id INTEGER REFERENCES referenti_commerciali(id);
+
+-- Numero ospiti diviso per fascia (adulti/bambini) e personale non-catering presente.
+-- numero_ospiti resta per compatibilità con dati storici ma non è più popolato dai form.
+ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_ospiti_adulti INTEGER;
+ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_bambini INTEGER;
+ALTER TABLE eventi ADD COLUMN IF NOT EXISTS numero_staff INTEGER;
+
+-- Etichetta libera di gruppo esterno (es. "Gruppo Aemme"), assegnabile a un
+-- membro squadra per un singolo evento. Non è un'anagrafica: si scrive a mano ogni volta.
+ALTER TABLE squadra_membri ADD COLUMN IF NOT EXISTS gruppo VARCHAR(100);
+
+-- Dove si ritrova questa persona per questo evento: 'sede' (usa ora_partenza_sede
+-- dell'evento) oppure 'location' (usa ora_ritrovo_location dell'evento).
+ALTER TABLE squadra_membri ADD COLUMN IF NOT EXISTS punto_ritrovo VARCHAR(20) DEFAULT 'sede';
+
+-- Etichetta di gruppo esterno storica/di default per un lavoratore, usata per
+-- suggerire il nome la prossima volta che si aggiunge qualcuno allo stesso gruppo.
+ALTER TABLE lavoratori ADD COLUMN IF NOT EXISTS gruppo VARCHAR(100);
+
+-- Richiesta numerica a un gruppo esterno per un evento: quante persone servono.
+-- L'invio della mail non è più immediato alla creazione: avviene con il comando
+-- settimanale "Richiedi disponibilità", insieme alle richieste ai lavoratori singoli.
+CREATE TABLE IF NOT EXISTS richieste_gruppo (
+  id SERIAL PRIMARY KEY,
+  evento_id INTEGER NOT NULL REFERENCES eventi(id) ON DELETE CASCADE,
+  nome_gruppo VARCHAR(100) NOT NULL,
+  numero_richiesto INTEGER NOT NULL,
+  email_contatto VARCHAR(255),
+  punto_ritrovo VARCHAR(20) DEFAULT 'sede',
+  stato VARCHAR(30) NOT NULL DEFAULT 'in_attesa_invio', -- in_attesa_invio | inviata | confermata | rifiutata
+  token_risposta VARCHAR(64) UNIQUE,
+  token_scadenza TIMESTAMPTZ,
+  email_inviata_il TIMESTAMPTZ,
+  risposta_il TIMESTAMPTZ,
+  creato_da INTEGER REFERENCES utenti(id),
+  creato_il TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_richieste_gruppo_evento ON richieste_gruppo(evento_id);
+CREATE INDEX IF NOT EXISTS idx_richieste_gruppo_token ON richieste_gruppo(token_risposta);
+
+-- Cestino: gli eventi eliminati non vengono cancellati subito, solo marcati.
+-- NULL = evento attivo, valorizzato = eliminato (recuperabile) in quel momento.
+ALTER TABLE eventi ADD COLUMN IF NOT EXISTS eliminato_il TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_eventi_eliminato ON eventi(eliminato_il);
+
+-- Allegati evento (moduli, planimetrie, menu, ecc.). Il contenuto è salvato
+-- direttamente nel database (bytea): niente storage esterno da configurare.
+-- Adatto a file di dimensione ragionevole (documenti, immagini); non pensato
+-- per file molto grandi.
+CREATE TABLE IF NOT EXISTS evento_allegati (
+  id SERIAL PRIMARY KEY,
+  evento_id INTEGER NOT NULL REFERENCES eventi(id) ON DELETE CASCADE,
+  nome_file VARCHAR(255) NOT NULL,
+  tipo_mime VARCHAR(100),
+  dimensione_byte INTEGER,
+  contenuto BYTEA NOT NULL,
+  caricato_da INTEGER REFERENCES utenti(id),
+  caricato_il TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_evento_allegati_evento ON evento_allegati(evento_id);

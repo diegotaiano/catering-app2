@@ -112,7 +112,7 @@ function SchedaLavoratori() {
         <div key={l.id} className="card">
           <div className="row">
             <div>
-              <strong>{l.nome} {l.cognome}</strong>
+              <strong>{l.cognome} {l.nome}</strong>
               <p style={{ margin: '4px 0', color: '#8B5E3C' }}>{l.email} {l.telefono ? `· ${l.telefono}` : ''}</p>
               <span className="badge da_contattare">{l.mansione}</span>
             </div>

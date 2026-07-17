@@ -2,8 +2,12 @@ import { Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import Login from './pages/Login.jsx';
 import Eventi from './pages/Eventi.jsx';
 import EventoDetail from './pages/EventoDetail.jsx';
+import AllegatiEvento from './pages/AllegatiEvento.jsx';
 import Anagrafica from './pages/Anagrafica.jsx';
+import Cestino from './pages/Cestino.jsx';
 import RispostaDisponibilita from './pages/RispostaDisponibilita.jsx';
+import GruppoRisposta from './pages/GruppoRisposta.jsx';
+import { haAccessoCompleto } from './ruoli.js';
 
 function RottaProtetta({ children }) {
   const token = localStorage.getItem('token');
@@ -33,6 +37,7 @@ function TopBar() {
       </Link>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <Link to="/anagrafica">Anagrafica</Link>
+        {haAccessoCompleto(utente) && <Link to="/cestino">Cestino</Link>}
         {utente && <span>{utente.nome} {utente.cognome}</span>}
         <button onClick={logout}>Esci</button>
       </div>
@@ -47,9 +52,12 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/disponibilita/:token" element={<RispostaDisponibilita />} />
+        <Route path="/gruppo-risposta/:token" element={<GruppoRisposta />} />
         <Route path="/eventi" element={<RottaProtetta><Eventi /></RottaProtetta>} />
         <Route path="/eventi/:id" element={<RottaProtetta><EventoDetail /></RottaProtetta>} />
+        <Route path="/eventi/:id/allegati" element={<RottaProtetta><AllegatiEvento /></RottaProtetta>} />
         <Route path="/anagrafica" element={<RottaProtetta><Anagrafica /></RottaProtetta>} />
+        <Route path="/cestino" element={<RottaProtetta><Cestino /></RottaProtetta>} />
         <Route path="*" element={<Navigate to="/eventi" replace />} />
       </Routes>
     </>

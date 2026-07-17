@@ -36,7 +36,7 @@ router.get('/:id/pdf', async (req, res) => {
        COALESCE(json_agg(
          json_build_object(
            'nome', l.nome, 'cognome', l.cognome, 'mansione', l.mansione,
-           'ruolo_specifico', sm.ruolo_specifico, 'stato_disponibilita', sm.stato_disponibilita
+           'ruolo_specifico', sm.ruolo_specifico, 'gruppo', sm.gruppo, 'stato_disponibilita', sm.stato_disponibilita
          ) ORDER BY l.cognome
        ) FILTER (WHERE sm.id IS NOT NULL), '[]') AS membri
      FROM squadre sq
@@ -48,7 +48,24 @@ router.get('/:id/pdf', async (req, res) => {
     [id]
   );
 
-  generaPdfEvento(res, evento, squadreRes.rows);
+  const allegatiRes = await query(
+    `SELECT nome_file, tipo_mime, contenuto FROM evento_allegati WHERE evento_id = $1 ORDER BY caricato_il`,
+    [id]
+  );
+
+  const furgoniRes = await query(
+    `SELECT f.nome, f.targa
+     FROM furgone_assegnazioni fa JOIN furgoni f ON f.id = fa.furgone_id
+     WHERE fa.evento_id = $1 ORDER BY f.nome`,
+    [id]
+  );
+
+  try {
+    await generaPdfEvento(res, evento, squadreRes.rows, allegatiRes.rows, furgoniRes.rows);
+  } catch (err) {
+    console.error('Errore generazione PDF:', err);
+    if (!res.headersSent) res.status(500).json({ errore: 'Errore nella generazione del PDF' });
+  }
 });
 
 export default router;

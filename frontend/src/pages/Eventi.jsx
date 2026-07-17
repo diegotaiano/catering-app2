@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { haAccessoCompleto } from '../ruoli.js';
+import CampoIndirizzo from '../components/CampoIndirizzo.jsx';
 
 const VUOTO = {
   nome: '', brand: 'Lanzarotti1967', cliente: '', data_evento: '',
   ora_partenza_sede: '', ora_ritrovo_location: '', ora_inizio: '', ora_fine: '',
-  luogo: '', numero_ospiti: '', referente_commerciale_id: '', capo_servizio_id: '', note: ''
+  luogo: '', luogo_url: '', numero_ospiti_adulti: '', numero_bambini: '', numero_staff: '', referente_commerciale_id: '', capo_servizio_id: '', note: ''
 };
 
 export default function Eventi() {
@@ -15,8 +16,11 @@ export default function Eventi() {
   const [capiServizio, setCapiServizio] = useState([]);
   const [mostraForm, setMostraForm] = useState(false);
   const [nuovoEvento, setNuovoEvento] = useState(VUOTO);
+  const [fileSelezionati, setFileSelezionati] = useState([]);
   const [errore, setErrore] = useState(null);
   const [annoAperto, setAnnoAperto] = useState(null);
+  const [invioSettimana, setInvioSettimana] = useState(null); // lunedì (stringa) in corso di invio
+  const [messaggioSettimana, setMessaggioSettimana] = useState(null);
   const utente = JSON.parse(localStorage.getItem('utente') || 'null');
   const puoCreare = haAccessoCompleto(utente);
 
@@ -35,7 +39,9 @@ export default function Eventi() {
     try {
       const dati = {
         ...nuovoEvento,
-        numero_ospiti: nuovoEvento.numero_ospiti ? Number(nuovoEvento.numero_ospiti) : null,
+        numero_ospiti_adulti: nuovoEvento.numero_ospiti_adulti ? Number(nuovoEvento.numero_ospiti_adulti) : null,
+        numero_bambini: nuovoEvento.numero_bambini ? Number(nuovoEvento.numero_bambini) : null,
+        numero_staff: nuovoEvento.numero_staff ? Number(nuovoEvento.numero_staff) : null,
         referente_commerciale_id: nuovoEvento.referente_commerciale_id ? Number(nuovoEvento.referente_commerciale_id) : null,
         capo_servizio_id: nuovoEvento.capo_servizio_id ? Number(nuovoEvento.capo_servizio_id) : null,
         ora_partenza_sede: nuovoEvento.ora_partenza_sede || null,
@@ -43,12 +49,36 @@ export default function Eventi() {
         ora_inizio: nuovoEvento.ora_inizio || null,
         ora_fine: nuovoEvento.ora_fine || null
       };
-      await api.creaEvento(dati);
+      const nuovo = await api.creaEvento(dati);
+      if (fileSelezionati.length > 0) {
+        try {
+          await api.caricaAllegati(nuovo.id, fileSelezionati);
+        } catch (errUpload) {
+          setErrore(`Evento creato, ma il caricamento degli allegati è fallito: ${errUpload.message}`);
+        }
+      }
       setMostraForm(false);
       setNuovoEvento(VUOTO);
+      setFileSelezionati([]);
       carica();
     } catch (err) {
       setErrore(err.message);
+    }
+  }
+
+  async function handleRichiediDisponibilitaSettimana(lunedi) {
+    setInvioSettimana(lunedi);
+    setMessaggioSettimana(null);
+    try {
+      const res = await api.richiediDisponibilitaSettimana(lunedi);
+      setMessaggioSettimana(
+        `Inviate ${res.email_lavoratori_inviate} email a lavoratori e ${res.email_gruppi_inviate} email a gruppi esterni per questa settimana.`
+      );
+      carica();
+    } catch (err) {
+      setMessaggioSettimana(`Errore: ${err.message}`);
+    } finally {
+      setInvioSettimana(null);
     }
   }
 
@@ -78,10 +108,11 @@ export default function Eventi() {
       {mostraForm && puoCreare && (
         <div className="card">
           <h3>Nuovo evento</h3>
-          {referenti.length === 0 && (
+          {(referenti.length === 0 || capiServizio.length === 0) && (
             <p style={{ color: '#a33' }}>
-              Non hai ancora nessun referente commerciale in anagrafica. Puoi comunque creare l'evento
-              e assegnarlo dopo, ma senza referente non potrai inviare la lista squadra al cliente.{' '}
+              Referente commerciale e capo servizio sono obbligatori per creare un evento.{' '}
+              {referenti.length === 0 && 'Non hai ancora nessun referente commerciale in anagrafica. '}
+              {capiServizio.length === 0 && 'Non hai ancora nessun utente con ruolo capo servizio. '}
               <Link to="/anagrafica">Vai in Anagrafica →</Link>
             </p>
           )}
@@ -128,33 +159,48 @@ export default function Eventi() {
               </div>
             </div>
 
-            <input placeholder="Luogo" value={nuovoEvento.luogo}
-              onChange={e => setNuovoEvento({ ...nuovoEvento, luogo: e.target.value })} />
+            <CampoIndirizzo value={nuovoEvento.luogo} linkAttuale={nuovoEvento.luogo_url}
+              onChange={(val, url) => setNuovoEvento({ ...nuovoEvento, luogo: val, luogo_url: url })} />
+
+            <label style={{ fontSize: 13, color: '#8B5E3C' }}>Numero presenti</label>
+            <div className="row">
+              <input type="number" min="0" placeholder="Ospiti adulti" value={nuovoEvento.numero_ospiti_adulti}
+                onChange={e => setNuovoEvento({ ...nuovoEvento, numero_ospiti_adulti: e.target.value })} />
+              <input type="number" min="0" placeholder="Bambini" value={nuovoEvento.numero_bambini}
+                onChange={e => setNuovoEvento({ ...nuovoEvento, numero_bambini: e.target.value })} />
+              <input type="number" min="0" placeholder="Staff" value={nuovoEvento.numero_staff}
+                onChange={e => setNuovoEvento({ ...nuovoEvento, numero_staff: e.target.value })} />
+            </div>
 
             <div className="row">
-              <input type="number" placeholder="Numero ospiti" value={nuovoEvento.numero_ospiti}
-                onChange={e => setNuovoEvento({ ...nuovoEvento, numero_ospiti: e.target.value })} />
-              <select value={nuovoEvento.referente_commerciale_id}
+              <select value={nuovoEvento.referente_commerciale_id} required
                 onChange={e => setNuovoEvento({ ...nuovoEvento, referente_commerciale_id: e.target.value })}>
-                <option value="">Referente commerciale...</option>
+                <option value="">Referente commerciale... *</option>
                 {referenti.map(r => <option key={r.id} value={r.id}>{r.nome} {r.cognome}</option>)}
               </select>
             </div>
 
-            <select value={nuovoEvento.capo_servizio_id}
+            <select value={nuovoEvento.capo_servizio_id} required
               onChange={e => setNuovoEvento({ ...nuovoEvento, capo_servizio_id: e.target.value })}>
-              <option value="">Capo servizio (chi gestirà l'evento)...</option>
+              <option value="">Capo servizio (chi gestirà l'evento)... *</option>
               {capiServizio.map(u => <option key={u.id} value={u.id}>{u.nome} {u.cognome}</option>)}
             </select>
 
             <textarea placeholder="Note (opzionale)" value={nuovoEvento.note}
               onChange={e => setNuovoEvento({ ...nuovoEvento, note: e.target.value })} rows={2} />
 
+            <label style={{ fontSize: 13, color: '#8B5E3C' }}>
+              Allegati (moduli, planimetrie, menu — opzionale)
+            </label>
+            <input type="file" multiple onChange={e => setFileSelezionati(Array.from(e.target.files || []))} />
+
             {errore && <p style={{ color: '#a33' }}>{errore}</p>}
             <button type="submit">Crea evento</button>
           </form>
         </div>
       )}
+
+      {messaggioSettimana && <div className="card" style={{ background: '#fdf1d6' }}>{messaggioSettimana}</div>}
 
       {(() => {
         const oggi = new Date(); oggi.setHours(0, 0, 0, 0);
@@ -171,9 +217,58 @@ export default function Eventi() {
         });
         const anni = Object.keys(passatiPerAnno).sort((a, b) => b - a);
 
+        // Raggruppo i futuri per settimana (lunedì-domenica)
+        function lunediDellaSettimana(dataStr) {
+          const d = new Date(dataStr);
+          const giorno = d.getDay(); // 0 = domenica
+          const diff = giorno === 0 ? -6 : 1 - giorno;
+          d.setDate(d.getDate() + diff);
+          return d;
+        }
+        // Uso i componenti locali (non toISOString, che converte in UTC e in Italia
+        // faceva slittare la data indietro di un giorno).
+        function formatoData(d) {
+          const anno = d.getFullYear();
+          const mese = String(d.getMonth() + 1).padStart(2, '0');
+          const giorno = String(d.getDate()).padStart(2, '0');
+          return `${anno}-${mese}-${giorno}`;
+        }
+
+        const settimane = new Map();
+        futuri.forEach(ev => {
+          const lunedi = formatoData(lunediDellaSettimana(ev.data_evento));
+          if (!settimane.has(lunedi)) settimane.set(lunedi, []);
+          settimane.get(lunedi).push(ev);
+        });
+        const chiaviSettimane = [...settimane.keys()].sort();
+
         return (
           <>
-            {futuri.map(ev => <CardEvento key={ev.id} ev={ev} />)}
+            {chiaviSettimane.map(lunedi => {
+              const domenica = new Date(lunedi);
+              domenica.setDate(domenica.getDate() + 6);
+              const eventiSettimana = settimane.get(lunedi);
+
+              return (
+                <div key={lunedi} style={{ marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 16, color: '#8B5E3C', borderBottom: '1px solid #e0d6bd', paddingBottom: 6 }}>
+                    Settimana {new Date(lunedi).toLocaleDateString('it-IT')} – {domenica.toLocaleDateString('it-IT')}
+                  </h3>
+                  {eventiSettimana.map(ev => <CardEvento key={ev.id} ev={ev} />)}
+                  {puoCreare && (
+                    <div className="row" style={{ justifyContent: 'flex-end', marginTop: 4 }}>
+                      <button
+                        className="secondary"
+                        disabled={invioSettimana === lunedi}
+                        onClick={() => handleRichiediDisponibilitaSettimana(lunedi)}
+                      >
+                        {invioSettimana === lunedi ? 'Invio in corso...' : 'Richiedi disponibilità'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             {futuri.length === 0 && passati.length === 0 && <p>Nessun evento ancora creato.</p>}
 
             {anni.length > 0 && (
@@ -208,7 +303,9 @@ function CardEvento({ ev }) {
           <div>
             <h3 style={{ margin: 0 }}>{ev.nome}</h3>
             <p style={{ margin: '4px 0', color: '#8B5E3C' }}>
-              {new Date(ev.data_evento).toLocaleDateString('it-IT')} · {ev.luogo || 'luogo da definire'}
+              {new Date(ev.data_evento).toLocaleDateString('it-IT')} · {ev.luogo_url ? (
+                <a href={ev.luogo_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: 'var(--oro-scuro)' }}>{ev.luogo}</a>
+              ) : (ev.luogo || 'luogo da definire')}
               {ev.referente_nome ? ` · Referente: ${ev.referente_nome} ${ev.referente_cognome}` : ' · Nessun referente assegnato'}
             </p>
             <span className={`badge ${ev.capo_servizio_nome ? 'disponibile' : 'da_contattare'}`}>
